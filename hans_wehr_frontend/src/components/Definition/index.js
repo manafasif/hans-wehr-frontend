@@ -130,35 +130,68 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
         } */}
       </Stack>
 
-      {Object.keys(definitions).map((form, i) => (
-        <Box
-          key={Math.random()}
+      <Fragment key={1}>
+        <Divider sx={{ display: "none", my: 3 }} />
+
+        {Object.keys(definitions).map((form, i) => (
+          <Box
+            key={Math.random()}
+            sx={{
+              boxShadow: "0px 10px 25px rgba(0, 0, 0, 0.05)",
+              backgroundColor: "#fff",
+              p: 2,
+              borderRadius: 2,
+              mt: 3,
+            }}
+          >
+            <Typography
+              sx={{ textTransform: "capitalize" }}
+              color="GrayText"
+              variant="subtitle1"
+            >
+              {form}
+            </Typography>
+            <Typography
+              sx={{ my: 1 }}
+              variant="body2"
+              color="GrayText"
+              key={definitions[form]}
+            >
+              {/* { {meaning.definitions.length > 1 && `${idx + 1}. `}{" "}} */}
+              {definitions[form]}
+            </Typography>
+          </Box>
+        ))}
+      </Fragment>
+
+      <Fragment key={1}>
+        <Divider sx={{ display: "block", my: 3 }} />
+
+        <Stack
+          direction="row"
+          alignItems="center"
+          justifyContent="space-between"
           sx={{
-            boxShadow: "0px 10px 25px rgba(0, 0, 0, 0.05)",
-            backgroundColor: "#fff",
-            p: 2,
-            borderRadius: 2,
             mt: 3,
+            background:
+              "linear-gradient(90.17deg, #212BBB 0.14%, #0F133A 98.58%)",
+            boxShadow: "0px 10px 20px rgba(19, 23, 71, 0.25)",
+            px: 4,
+            py: 5,
+            color: "white",
+            borderRadius: 2,
           }}
         >
-          <Typography
-            sx={{ textTransform: "capitalize" }}
-            color="GrayText"
-            variant="subtitle1"
-          >
-            {form}
+          <Typography sx={{ textTransform: "capitalize" }} variant="h6">
+            Nouns
           </Typography>
-          <Typography
-            sx={{ my: 1 }}
-            variant="body2"
-            color="GrayText"
-            key={definitions[form]}
-          >
-            {/* { {meaning.definitions.length > 1 && `${idx + 1}. `}{" "}} */}
-            {definitions[form]}
-          </Typography>
-        </Box>
-      ))}
+          {/* {
+          <IconButton>
+            <PlayIcon />
+          </IconButton>
+        } */}
+        </Stack>
+      </Fragment>
 
       {/* 
       <Fragment key={123}>
