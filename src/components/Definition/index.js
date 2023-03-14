@@ -26,8 +26,9 @@ const AlignCenterBox = styled(Box)(({ theme }) => ({
 const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
   const { word } = useParams();
   const history = useHistory();
-  const [definitions, setDefinitions] = useState([]);
-  const [nouns, setNouns] = useState([]);
+  // const [definitions, setDefinitions] = useState([]);
+  // const [nouns, setNouns] = useState([]);
+  const [rootInfo, setRootInfo] = useState({});
   const [exist, setExist] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [successfullyConnected, setSuccessfullyConnected] = useState(false);
@@ -37,9 +38,14 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
 
   const updateState = (data) => {
     console.log("update state Data: " + JSON.stringify(data));
-    setDefinitions(data["definition"]);
-    setNouns(data["nouns"]);
-    console.log("New def:" + JSON.stringify(definitions));
+    setRootInfo({
+      definitions: data["definitions"],
+      nouns: data["nouns"],
+    });
+    console.log("Succcessfully updated root info");
+    // setDefinitions(data["definition"]);
+    // setNouns(data["nouns"]);
+    // console.log("New def:" + JSON.stringify(definitions));
     // const phonetics = data[0].phonetics;
     // if (!phonetics.length) return;
     // const url = phonetics[0].audio.replace("//ssl", "https://ssl");
@@ -68,23 +74,27 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
         console.error(err);
         if (!err.response) {
           setSuccessfullyConnected(false);
-          setExist(false);
-          setLoaded(true);
         } else {
           setSuccessfullyConnected(true);
-          setExist(false);
-          setLoaded(true);
         }
+        setExist(false);
+        setLoaded(true);
         console.log("Set to false");
       }
     };
 
-    fetchDefinition();
-    // if (!isBookmarked) fetchDefinition();
-    // else updateState(bookmarks[word]);
+    // fetchDefinition();
+    if (!isBookmarked) fetchDefinition();
+    else {
+      console.log("Bookmarked word: " + JSON.stringify(bookmarks[word]));
+      updateState(bookmarks[word]);
+      setSuccessfullyConnected(true);
+      setExist(true);
+      setLoaded(true);
+    }
   }, []);
 
-  console.log("Definitions: " + JSON.stringify(definitions));
+  console.log("Root info: " + JSON.stringify(rootInfo));
   // console.log("Definitions length: " + Object.keys(definitions).length);
   console.log("Exist: " + JSON.stringify(exist));
 
@@ -132,7 +142,7 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
         </IconButton>
         <IconButton
           onClick={() =>
-            isBookmarked ? removeBookmark(word) : addBookmark(word, definitions)
+            isBookmarked ? removeBookmark(word) : addBookmark(word, rootInfo)
           }
         >
           {isBookmarked ? (
@@ -170,7 +180,7 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
       <Fragment key={1}>
         <Divider sx={{ display: "none", my: 3 }} />
 
-        {Object.keys(definitions).map((form, i) => (
+        {Object.keys(rootInfo["definitions"]).map((form, i) => (
           <Box
             key={Math.random()}
             sx={{
@@ -192,10 +202,10 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
               sx={{ my: 1 }}
               variant="body2"
               color="GrayText"
-              key={definitions[form]}
+              key={rootInfo["definitions"][form]}
             >
               {/* { {meaning.definitions.length > 1 && `${idx + 1}. `}{" "}} */}
-              {definitions[form]}
+              {rootInfo["definitions"][form]}
             </Typography>
           </Box>
         ))}
@@ -229,8 +239,8 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
         } */}
         </Stack>
 
-        {nouns &&
-          nouns.map((noun, i) => (
+        {rootInfo["nouns"] &&
+          rootInfo["nouns"].map((noun, i) => (
             <Box
               key={Math.random()}
               sx={{
@@ -246,7 +256,7 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
                 color="GrayText"
                 variant="subtitle1"
               >
-                {nouns[i]["word"]}
+                {rootInfo["nouns"][i]["word"]}
               </Typography>
               <Typography
                 sx={{ my: 1 }}
@@ -255,7 +265,7 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
                 key={i}
               >
                 {/* { {meaning.definitions.length > 1 && `${idx + 1}. `}{" "}} */}
-                {nouns[i]["definition"]}
+                {rootInfo["nouns"][i]["definition"]}
               </Typography>
             </Box>
           ))}

@@ -58,7 +58,7 @@ const Home = () => {
           />
         </form>
       </Box>
-      {/* <IconButton
+      <IconButton
         to="/bookmarks"
         component={Link}
         sx={{
@@ -70,7 +70,7 @@ const Home = () => {
         }}
       >
         <BookmarkIcon />
-      </IconButton> */}
+      </IconButton>
     </Box>
   );
 };
