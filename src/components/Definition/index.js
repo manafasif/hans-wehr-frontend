@@ -29,6 +29,8 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
   const [definitions, setDefinitions] = useState([]);
   const [nouns, setNouns] = useState([]);
   const [exist, setExist] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+  const [successfullyConnected, setSuccessfullyConnected] = useState(false);
   // const [audio, setAudio] = useState(null);
 
   const isBookmarked = Object.keys(bookmarks).includes(word);
@@ -58,11 +60,21 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
         // console.log("RESPONSE: ", JSON.stringify(resp));
         updateState(resp.data["data"]);
         // updateState()
+        setSuccessfullyConnected(true);
         setExist(true);
+        setLoaded(true);
         console.log("Set to true");
       } catch (err) {
         console.error(err);
-        setExist(false);
+        if (!err.response) {
+          setSuccessfullyConnected(false);
+          setExist(false);
+          setLoaded(true);
+        } else {
+          setSuccessfullyConnected(true);
+          setExist(false);
+          setLoaded(true);
+        }
         console.log("Set to false");
       }
     };
@@ -75,6 +87,27 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
   console.log("Definitions: " + JSON.stringify(definitions));
   // console.log("Definitions length: " + Object.keys(definitions).length);
   console.log("Exist: " + JSON.stringify(exist));
+
+  if (!loaded)
+    return (
+      <AlignCenterBox>
+        <CircularProgress />
+      </AlignCenterBox>
+    );
+
+  if (!successfullyConnected)
+    return (
+      <AlignCenterBox>
+        <Typography>Error connecting to API</Typography>
+        <Button
+          variant="contained"
+          sx={{ textTransform: "capitalize", mt: 2 }}
+          onClick={history.goBack}
+        >
+          <b>Go back</b>
+        </Button>
+      </AlignCenterBox>
+    );
 
   if (!exist) {
     return (
@@ -90,13 +123,6 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
       </AlignCenterBox>
     );
   }
-
-  if (!Object.keys(definitions).length)
-    return (
-      <AlignCenterBox>
-        <CircularProgress />
-      </AlignCenterBox>
-    );
 
   return (
     <>
