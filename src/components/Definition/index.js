@@ -48,7 +48,7 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
     const fetchDefinition = async () => {
       try {
         const resp = await axios.get(
-          `http://ec2-100-24-206-48.compute-1.amazonaws.com:3000/root/?root=${word}`
+          `https://ec2-100-24-206-48.compute-1.amazonaws.com:3000/root/?root=${word}`
         );
         const resp2 = await axios.get(
           "https://api.coindesk.com/v1/bpi/currentprice.json"
@@ -123,7 +123,7 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
         sx={{
           mt: 3,
           background:
-            "linear-gradient(90.17deg, #191E5D 0.14%, #0F133A 98.58%)",
+            "linear-gradient(90.17deg, #191E5D 0.14%, #161F75 98.58%)",
           boxShadow: "0px 10px 20px rgba(19, 23, 71, 0.25)",
           px: 4,
           py: 5,
