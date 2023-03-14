@@ -48,7 +48,12 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
     const fetchDefinition = async () => {
       try {
         const resp = await axios.get(`/root?root=${word}`);
-        console.log("RESPONSE: ", JSON.stringify(resp));
+        const resp2 = await axios.get(
+          "https://api.coindesk.com/v1/bpi/currentprice.json"
+        );
+        console.log(JSON.stringify(resp2.data));
+        console.log(JSON.stringify(resp.data));
+        // console.log("RESPONSE: ", JSON.stringify(resp));
         updateState(resp.data["data"]);
         // updateState()
         setExist(true);
