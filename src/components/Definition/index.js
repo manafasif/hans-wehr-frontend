@@ -32,6 +32,7 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
   const [exist, setExist] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [successfullyConnected, setSuccessfullyConnected] = useState(false);
+  const [error, setError] = useState(null);
   // const [audio, setAudio] = useState(null);
 
   const isBookmarked = Object.keys(bookmarks).includes(word);
@@ -51,7 +52,6 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
     // const url = phonetics[0].audio.replace("//ssl", "https://ssl");
     // setAudio(new Audio(url));
   };
-
   useEffect(() => {
     const fetchDefinition = async () => {
       try {
@@ -72,6 +72,7 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
         console.log("Set to true");
       } catch (err) {
         console.error(err);
+        setError(err);
         if (!err.response) {
           setSuccessfullyConnected(false);
         } else {
@@ -108,7 +109,10 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
   if (!successfullyConnected)
     return (
       <AlignCenterBox>
-        <Typography>Error connecting to API</Typography>
+        <Typography>
+          Error connecting to API
+          {JSON.stringify(error)}
+        </Typography>
         <Button
           variant="contained"
           sx={{ textTransform: "capitalize", mt: 2 }}
