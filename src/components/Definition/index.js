@@ -9,6 +9,7 @@ import {
   useTheme,
   Button,
   styled,
+  Tooltip,
 } from "@material-ui/core";
 import {
   ArrowBack as BackIcon,
@@ -56,10 +57,6 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
     const fetchDefinition = async () => {
       try {
         const resp = await axios.get(`https://hanswehr.com/root?root=${word}`);
-        const resp2 = await axios.get(
-          "https://api.coindesk.com/v1/bpi/currentprice.json"
-        );
-        console.log(JSON.stringify(resp2.data));
         console.log(JSON.stringify(resp.data));
         // console.log("RESPONSE: ", JSON.stringify(resp));
         updateState(resp.data["data"]);
@@ -67,7 +64,7 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
         setSuccessfullyConnected(true);
         setExist(true);
         setLoaded(true);
-        console.log("Set to true");
+        // console.log("Set to true");
       } catch (err) {
         console.error(err);
         setError(err);
@@ -78,7 +75,7 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
         }
         setExist(false);
         setLoaded(true);
-        console.log("Set to false");
+        // console.log("Set to false");
       }
     };
 
@@ -93,9 +90,9 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
     }
   }, []);
 
-  console.log("Root info: " + JSON.stringify(rootInfo));
+  // console.log("Root info: " + JSON.stringify(rootInfo));
   // console.log("Definitions length: " + Object.keys(definitions).length);
-  console.log("Exist: " + JSON.stringify(exist));
+  // console.log("Exist: " + JSON.stringify(exist));
 
   if (!loaded)
     return (
@@ -154,35 +151,38 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
           )}
         </IconButton>
       </Stack>
-      <Stack
-        direction="row"
-        alignItems="center"
-        justifyContent="space-between"
-        sx={{
-          mt: 3,
-          background:
-            "linear-gradient(90.17deg, #191E5D 0.14%, #161F75 98.58%)",
-          boxShadow: "0px 10px 20px rgba(19, 23, 71, 0.25)",
-          px: 4,
-          py: 5,
-          color: "white",
-          borderRadius: 2,
-        }}
-      >
-        <Typography sx={{ textTransform: "capitalize" }} variant="h5">
-          {word}
-        </Typography>
-        {/* {
-          <IconButton>
-            <PlayIcon />
-          </IconButton>
-        } */}
-      </Stack>
+      <Tooltip title="Root">
+        <Stack
+          direction="row"
+          alignItems="center"
+          justifyContent="space-between"
+          sx={{
+            mt: 3,
+            background:
+              "linear-gradient(90.17deg, #191E5D 0.14%, #161F75 98.58%)",
+            boxShadow: "0px 10px 20px rgba(19, 23, 71, 0.25)",
+            px: 4,
+            py: 5,
+            color: "white",
+            borderRadius: 2,
+          }}
+        >
+          <Typography sx={{ textTransform: "capitalize" }} variant="h5">
+            {word}
+          </Typography>
+          {/* {
+            <IconButton>
+              <PlayIcon />
+            </IconButton>
+          } */}
+        </Stack>
+      </Tooltip>
 
       <Fragment key={1}>
         <Divider sx={{ display: "none", my: 3 }} />
 
         {Object.keys(rootInfo["definitions"]).map((form, i) => (
+          // <Tooltip title={`Verb Form ${form}`}>
           <Box
             key={Math.random()}
             sx={{
@@ -210,6 +210,7 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
               {rootInfo["definitions"][form]}
             </Typography>
           </Box>
+          // </Tooltip>
         ))}
       </Fragment>
 
