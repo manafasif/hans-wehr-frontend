@@ -8,6 +8,8 @@ import {
   Paper,
   Container,
   Tooltip,
+  Grid,
+  Switch,
 } from "@material-ui/core";
 import {
   Search as SearchIcon,
@@ -16,6 +18,7 @@ import {
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import { useHistory, Link } from "react-router-dom";
 import InputAdornment from "@mui/material/InputAdornment";
+import { padding } from "@material-ui/system";
 
 function GuestFooter() {
   return (
@@ -63,8 +66,13 @@ function GuestFooter() {
 
 const Home = () => {
   const [word, setWord] = useState("");
+  const [switchState, setSwitchState] = useState("Root");
   const theme = useTheme();
   const history = useHistory();
+
+  const handleSwitchChange = (event) => {
+    setSwitchState(event.target.checked ? "Root" : "Noun");
+  };
 
   const handleSubmit = (event) => {
     event.preventDefault();
@@ -103,7 +111,7 @@ const Home = () => {
       </Typography>
       <Typography color="GrayText">Find meanings of arabic roots</Typography>
       <Box sx={{ width: "360px" }}>
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} spacing={0}>
           <FilledInput
             value={word}
             onChange={(event) => setWord(event.target.value)}
@@ -143,6 +151,27 @@ const Home = () => {
           />
         </form>
       </Box>
+
+      {/* <Grid
+        component="label"
+        container
+        alignItems="center"
+        spacing={1}
+        justifyContent="center"
+        marginTop={0}
+        marginBottom={2}
+      >
+        <Grid item>Noun</Grid>
+        <Grid item>
+          <Switch
+            checked={switchState === "Root"} // relevant state for your case
+            onChange={handleSwitchChange}
+            value="checked" // some value you need
+          />
+        </Grid>
+        <Grid item>Root</Grid>
+      </Grid> */}
+
       <Tooltip title="Bookmarks">
         <IconButton
           to="/bookmarks"

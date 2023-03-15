@@ -56,7 +56,9 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
   useEffect(() => {
     const fetchDefinition = async () => {
       try {
-        const resp = await axios.get(`https://hanswehr.com/root?root=${word}`);
+        const resp = await axios.get(
+          `https://api.hanswehr.com/root?root=${word}`
+        );
         console.log(JSON.stringify(resp.data));
         // console.log("RESPONSE: ", JSON.stringify(resp));
         updateState(resp.data["data"]);
