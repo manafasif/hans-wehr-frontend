@@ -139,17 +139,21 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
         <IconButton onClick={history.goBack}>
           <BackIcon sx={{ color: "black" }} />
         </IconButton>
-        <IconButton
-          onClick={() =>
-            isBookmarked ? removeBookmark(word) : addBookmark(word, rootInfo)
-          }
+        <Tooltip
+          title={isBookmarked ? "Remove from Bookmarks" : "Add to Bookmarks"}
         >
-          {isBookmarked ? (
-            <BookmarkedIcon sx={{ color: "black" }} />
-          ) : (
-            <BookmarkIcon sx={{ color: "black" }} />
-          )}
-        </IconButton>
+          <IconButton
+            onClick={() =>
+              isBookmarked ? removeBookmark(word) : addBookmark(word, rootInfo)
+            }
+          >
+            {isBookmarked ? (
+              <BookmarkedIcon sx={{ color: "black" }} />
+            ) : (
+              <BookmarkIcon sx={{ color: "black" }} />
+            )}
+          </IconButton>
+        </Tooltip>
       </Stack>
       <Tooltip title="Root">
         <Stack
