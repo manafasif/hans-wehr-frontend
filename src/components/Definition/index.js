@@ -55,9 +55,7 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
   useEffect(() => {
     const fetchDefinition = async () => {
       try {
-        const resp = await axios.get(
-          `https://ec2-100-24-206-48.compute-1.amazonaws.com:3000/root/?root=${word}`
-        );
+        const resp = await axios.get(`https://hanswehr.com/root?root=${word}`);
         const resp2 = await axios.get(
           "https://api.coindesk.com/v1/bpi/currentprice.json"
         );
