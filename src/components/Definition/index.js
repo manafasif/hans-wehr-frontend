@@ -24,6 +24,14 @@ const AlignCenterBox = styled(Box)(({ theme }) => ({
   ...theme.mixins.alignInTheCenter,
 }));
 
+const LOCAL = process.env.REACT_APP_LOCAL;
+var API_URL = "https://api.hanswehr.com";
+if (LOCAL === "1") {
+  API_URL = "http://localhost:8080";
+}
+
+console.log(API_URL);
+
 const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
   const { word } = useParams();
   const history = useHistory();
@@ -56,9 +64,7 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
   useEffect(() => {
     const fetchDefinition = async () => {
       try {
-        const resp = await axios.get(
-          `https://api.hanswehr.com/root?root=${word}`
-        );
+        const resp = await axios.get(API_URL + `/root?root=${word}`);
         console.log(JSON.stringify(resp.data));
         // console.log("RESPONSE: ", JSON.stringify(resp));
         updateState(resp.data["data"]);
