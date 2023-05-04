@@ -1,0 +1,27 @@
+.mask-box {
+    border-radius: 20px;
+    position: relative;
+    background: #eae9ef;
+    box-shadow: 1px 1px 2px rgb(165, 165, 165) inset;
+    margin-bottom: 25px;
+  }
+  .mask-box .mask {
+    width: 100px;
+    height: 40px;
+    border-radius: 20px;
+    background: #00067f;
+    position: absolute;
+    box-shadow: 1px 0 2px #04062e;
+    transition: all 0.5s ease;
+  }
+  .mask-box .MuiButton-root {
+    border-radius: 20px;
+    width: 100px;
+    height: 40px;
+    font-weight: bold;
+    transition: all 0.2s 0.1s ease;
+  }
+  .mask-box .MuiButton-root:hover {
+    opacity: 0.8;
+  }
+  

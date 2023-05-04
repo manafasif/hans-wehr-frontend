@@ -10,6 +10,8 @@ import {
   Tooltip,
   Grid,
   Switch,
+  ToggleButton,
+  Button,
 } from "@material-ui/core";
 import {
   Search as SearchIcon,
@@ -19,6 +21,8 @@ import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import { useHistory, Link } from "react-router-dom";
 import InputAdornment from "@mui/material/InputAdornment";
 import { padding } from "@material-ui/system";
+import { StyledEngineProvider } from "@mui/material/styles";
+import "./styles.css";
 
 function GuestFooter() {
   return (
@@ -66,13 +70,13 @@ function GuestFooter() {
 
 const Home = () => {
   const [word, setWord] = useState("");
-  const [switchState, setSwitchState] = useState("Root");
+  const [switchState, setSwitchState] = useState("Roots");
   const theme = useTheme();
   const history = useHistory();
 
-  const handleSwitchChange = (event) => {
-    setSwitchState(event.target.checked ? "Root" : "Noun");
-  };
+  // const handleSwitchChange = (event) => {
+  //   setSwitchState(event.target.checked ? "Root" : "Noun");
+  // };
 
   const handleSubmit = (event) => {
     event.preventDefault();
@@ -110,6 +114,7 @@ const Home = () => {
         Hans Wehr
       </Typography>
       <Typography color="GrayText">Find meanings of arabic roots</Typography>
+      {/* <b>{switchState}</b> */}
       <Box sx={{ width: "360px" }}>
         <form onSubmit={handleSubmit} spacing={0}>
           <FilledInput
@@ -152,6 +157,37 @@ const Home = () => {
         </form>
       </Box>
 
+      {/* <StyledEngineProvider injectFirst>
+        <Box sx={{ display: "flex" }}>
+          <Box className="mask-box">
+            <Box
+              className="mask"
+              style={{
+                transform: `translateX(${
+                  switchState === "Roots" ? 0 : "100px"
+                })`,
+              }}
+            />
+            <Button
+              disableRipple
+              variant="text"
+              sx={{ color: switchState === "Roots" ? "#ffffff" : "#1623AE" }}
+              onClick={() => setSwitchState("Roots")}
+            >
+              Roots
+            </Button>
+            <Button
+              disableRipple
+              variant="text"
+              sx={{ color: switchState === "Nouns" ? "#ffffff" : "#0D0579" }}
+              onClick={() => setSwitchState("Nouns")}
+            >
+              Nouns
+            </Button>
+          </Box>
+        </Box>
+      </StyledEngineProvider> */}
+
       {/* <Grid
         component="label"
         container
@@ -182,6 +218,7 @@ const Home = () => {
             color: "#fff",
             background: (theme) => theme.palette.pink,
             boxShadow: "0px 10px 10px rgba(221, 114, 133, 0.2)",
+            marginBottom: 20,
           }}
         >
           <BookmarkIcon />
