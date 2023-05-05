@@ -19,6 +19,7 @@ import {
 } from "@material-ui/icons";
 import { useParams, useHistory } from "react-router-dom";
 import axios from "axios";
+import logger from "logrock";
 
 const AlignCenterBox = styled(Box)(({ theme }) => ({
   ...theme.mixins.alignInTheCenter,
@@ -29,8 +30,7 @@ var API_URL = "https://api.hanswehr.com";
 if (LOCAL === "1") {
   API_URL = "http://localhost:8080";
 }
-
-console.log(API_URL);
+logger.warn(`API URL: ${API_URL}`);
 
 const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
   const { word } = useParams();
@@ -48,10 +48,15 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
 
   const updateState = (data) => {
     console.log("update state Data: " + JSON.stringify(data));
-    setRootInfo({
-      definitions: data["definitions"],
-      nouns: data["nouns"],
+    const newRootInfo = [];
+    data.array.forEach((element) => {
+      newRootInfo.push({
+        definitions: element["definitions"],
+        nouns: element["nouns"],
+      });
     });
+
+    setRootInfo();
     console.log("Succcessfully updated root info");
     // setDefinitions(data["definition"]);
     // setNouns(data["nouns"]);
@@ -193,7 +198,7 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
       <Fragment key={1}>
         <Divider sx={{ display: "none", my: 3 }} />
 
-        {Object.keys(rootInfo["definitions"]).map((form, i) => (
+        {rootInfo["definitions"].map((formEntry, i) => (
           // <Tooltip title={`Verb Form ${form}`}>
           <Box
             key={Math.random()}
@@ -210,16 +215,28 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
               color="GrayText"
               variant="subtitle1"
             >
-              {form}
+              {console.log("FORM ENTRY: " + JSON.stringify(formEntry)) ||
+                `${formEntry.form} - ${formEntry.text}`}
+            </Typography>
+            <Typography
+              sx={{ my: 0.5 }}
+              variant="body2"
+              color="GrayText"
+              fontWeight={550}
+              key={i}
+            >
+              {formEntry.transliteration
+                ? `${formEntry.transliteration}`
+                : null}
             </Typography>
             <Typography
               sx={{ my: 1 }}
               variant="body2"
               color="GrayText"
-              key={rootInfo["definitions"][form]}
+              key={i}
+              dangerouslySetInnerHTML={{ __html: formEntry.translation.text }}
             >
               {/* { {meaning.definitions.length > 1 && `${idx + 1}. `}{" "}} */}
-              {rootInfo["definitions"][form]}
             </Typography>
           </Box>
           // </Tooltip>
@@ -255,7 +272,7 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
         </Stack>
 
         {rootInfo["nouns"] &&
-          rootInfo["nouns"].map((noun, i) => (
+          rootInfo["nouns"].map((nounEntry, i) => (
             <Box
               key={Math.random()}
               sx={{
@@ -266,22 +283,33 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
                 mt: 3,
               }}
             >
+              <Typography color="GrayText" variant="subtitle1">
+                {`${nounEntry["text"]} ${
+                  nounEntry["plural"]["text"]
+                    ? `pl. ${nounEntry["plural"]["text"]}`
+                    : ""
+                }`}
+              </Typography>
               <Typography
-                sx={{ textTransform: "capitalize" }}
+                sx={{ my: 0.5 }}
+                variant="body2"
                 color="GrayText"
-                variant="subtitle1"
+                fontWeight={550}
+                key={i}
               >
-                {rootInfo["nouns"][i]["word"]}
+                {nounEntry.transliteration
+                  ? `${nounEntry.transliteration}`
+                  : null}
               </Typography>
               <Typography
                 sx={{ my: 1 }}
                 variant="body2"
                 color="GrayText"
                 key={i}
-              >
-                {/* { {meaning.definitions.length > 1 && `${idx + 1}. `}{" "}} */}
-                {rootInfo["nouns"][i]["definition"]}
-              </Typography>
+                dangerouslySetInnerHTML={{
+                  __html: nounEntry["translation"]["text"],
+                }}
+              ></Typography>
             </Box>
           ))}
       </Fragment>
@@ -378,5 +406,7 @@ const formToInt = {
   IX: 9,
   X: 10,
 };
+
+function renderDefinition(definition) {}
 
 export default Definition;

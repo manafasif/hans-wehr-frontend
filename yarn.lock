@@ -6455,6 +6455,11 @@ lilconfig@^2.0.3, lilconfig@^2.0.5, lilconfig@^2.0.6:
   resolved "https://registry.yarnpkg.com/lilconfig/-/lilconfig-2.1.0.tgz#78e23ac89ebb7e1bfbf25b18043de756548e7f52"
   integrity sha512-utWOt/GHzuUxnLKxB6dk81RoOeoNeHgbrXiuGk4yyF5qlRz+iIVWu56E2fqGHFrXz0QNUhLB/8nKqvRH66JKGQ==
 
+limited-array@^2.0.2:
+  version "2.0.3"
+  resolved "https://registry.yarnpkg.com/limited-array/-/limited-array-2.0.3.tgz#32d1d2dcd06f22fb6bdc3ceb6eb509f01d1779b4"
+  integrity sha512-TXar/g3RoKY0fdXyfSs+KdKsC9Hnj5AFgxmMU4NVfkk6eGvfc7V2+9G5sN05CrVWH+SgTSH+wkMFp1rS+XQXuA==
+
 lines-and-columns@^1.1.6:
   version "1.2.4"
   resolved "https://registry.yarnpkg.com/lines-and-columns/-/lines-and-columns-1.2.4.tgz#eca284f75d2965079309dc0ad9255abb2ebc1632"
@@ -6530,6 +6535,14 @@ lodash@^4.17.15, lodash@^4.17.20, lodash@^4.17.21, lodash@^4.7.0:
   version "4.17.21"
   resolved "https://registry.yarnpkg.com/lodash/-/lodash-4.17.21.tgz#679591c564c3bffaae8454cf0b3df370c3d6911c"
   integrity sha512-v2kDEe57lecTulaDIuNTPy3Ry4gLGJ6Z1O3vE1krgXZNrsQ+LFTGHVxVjcXPs17LhbZVGedAJv8XZ1tvj5FvSg==
+
+logrock@^3.3.0:
+  version "3.3.0"
+  resolved "https://registry.yarnpkg.com/logrock/-/logrock-3.3.0.tgz#e0c4fcc0575b8cc6211261e22ab8b7dd50a1846c"
+  integrity sha512-av9IvR6O+94WfTjJvQcCXjPyqWCP12sicq4JNAjjkD9RR5XtNKUCGoeQ8oegX+x1gwPxC5bR0Zgfx93XfD4lfg==
+  dependencies:
+    limited-array "^2.0.2"
+    valid-types "^2.0.5"
 
 loose-envify@^1.1.0, loose-envify@^1.2.0, loose-envify@^1.3.1, loose-envify@^1.4.0:
   version "1.4.0"
@@ -9233,6 +9246,11 @@ v8-to-istanbul@^8.1.0:
     "@types/istanbul-lib-coverage" "^2.0.1"
     convert-source-map "^1.6.0"
     source-map "^0.7.3"
+
+valid-types@^2.0.5:
+  version "2.0.5"
+  resolved "https://registry.yarnpkg.com/valid-types/-/valid-types-2.0.5.tgz#df2482c5e50df52fce8f55355d83af178c20b749"
+  integrity sha512-ZbrlWHFD/g3cDd7ieBdELBFZcujXjQkuv2wWEQTSWpU1evC0UnFZMxY/mghtM39tld0ggNYX0sdXu7f6U6H8aw==
 
 value-equal@^1.0.1:
   version "1.0.1"
