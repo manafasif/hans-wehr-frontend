@@ -30,6 +30,7 @@ var API_URL = "https://api.hanswehr.com";
 if (LOCAL === "1") {
   API_URL = "http://localhost:8080";
 }
+const CURRENT_RESPONSE_VERS = "1.0";
 logger.warn(`API URL: ${API_URL}`);
 
 const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
@@ -46,17 +47,23 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
 
   const isBookmarked = Object.keys(bookmarks).includes(word);
 
-  const updateState = (data) => {
+  const DottedDivider = styled(Divider)({
+    border: 0,
+    borderTop: "1px dotted #ccc",
+    margin: "24px 0",
+  });
+
+  function updateState(data) {
     console.log("update state Data: " + JSON.stringify(data));
     const newRootInfo = [];
-    data.array.forEach((element) => {
+    data.forEach((element) => {
       newRootInfo.push({
         definitions: element["definitions"],
         nouns: element["nouns"],
       });
     });
 
-    setRootInfo();
+    setRootInfo(newRootInfo);
     console.log("Succcessfully updated root info");
     // setDefinitions(data["definition"]);
     // setNouns(data["nouns"]);
@@ -65,17 +72,19 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
     // if (!phonetics.length) return;
     // const url = phonetics[0].audio.replace("//ssl", "https://ssl");
     // setAudio(new Audio(url));
-  };
+  }
   useEffect(() => {
     const fetchDefinition = async () => {
       try {
         const resp = await axios.get(API_URL + `/root?root=${word}`);
         console.log(JSON.stringify(resp.data));
-        // console.log("RESPONSE: ", JSON.stringify(resp));
+        console.log("RESPONSE: ", resp.data["data"]);
         updateState(resp.data["data"]);
+
+        setExist(resp.data["data"].length !== 0);
+
         // updateState()
         setSuccessfullyConnected(true);
-        setExist(true);
         setLoaded(true);
         // console.log("Set to true");
       } catch (err) {
@@ -93,8 +102,16 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
     };
 
     // fetchDefinition();
-    if (!isBookmarked) fetchDefinition();
-    else {
+    if (!isBookmarked) {
+      fetchDefinition();
+    } else if (
+      !bookmarks[word][0] ||
+      bookmarks[word][0]["responseVersion"] !== CURRENT_RESPONSE_VERS
+    ) {
+      // cached entry is expired, fetch again
+      console.log("ReFetching word");
+      fetchDefinition();
+    } else {
       console.log("Bookmarked word: " + JSON.stringify(bookmarks[word]));
       updateState(bookmarks[word]);
       setSuccessfullyConnected(true);
@@ -103,9 +120,27 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
     }
   }, []);
 
-  // console.log("Root info: " + JSON.stringify(rootInfo));
-  // console.log("Definitions length: " + Object.keys(definitions).length);
-  // console.log("Exist: " + JSON.stringify(exist));
+  function renderAllRootInfo() {
+    if (rootInfo.length === 1) {
+      return renderDefinition(word, rootInfo[0], null);
+    } else {
+      const out = [];
+      rootInfo.forEach((rootDefinition, index) => {
+        out.push(
+          renderDefinition(
+            word,
+            rootDefinition,
+            `${index + 1} of ${rootInfo.length}`
+          )
+        );
+
+        if (index != rootInfo.length - 1) {
+          out.push(<Divider light={false} sx={{ display: "block", my: 3 }} />);
+        }
+      });
+      return out;
+    }
+  }
 
   if (!loaded)
     return (
@@ -130,7 +165,6 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
         </Button>
       </AlignCenterBox>
     );
-
   if (!exist) {
     return (
       <AlignCenterBox>
@@ -168,151 +202,8 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
           </IconButton>
         </Tooltip>
       </Stack>
-      <Tooltip title="Root">
-        <Stack
-          direction="row"
-          alignItems="center"
-          justifyContent="space-between"
-          sx={{
-            mt: 3,
-            background:
-              "linear-gradient(90.17deg, #191E5D 0.14%, #161F75 98.58%)",
-            boxShadow: "0px 10px 20px rgba(19, 23, 71, 0.25)",
-            px: 4,
-            py: 5,
-            color: "white",
-            borderRadius: 2,
-          }}
-        >
-          <Typography sx={{ textTransform: "capitalize" }} variant="h5">
-            {word}
-          </Typography>
-          {/* {
-            <IconButton>
-              <PlayIcon />
-            </IconButton>
-          } */}
-        </Stack>
-      </Tooltip>
 
-      <Fragment key={1}>
-        <Divider sx={{ display: "none", my: 3 }} />
-
-        {rootInfo["definitions"].map((formEntry, i) => (
-          // <Tooltip title={`Verb Form ${form}`}>
-          <Box
-            key={Math.random()}
-            sx={{
-              boxShadow: "0px 10px 25px rgba(0, 0, 0, 0.05)",
-              backgroundColor: "#fff",
-              p: 2,
-              borderRadius: 2,
-              mt: 3,
-            }}
-          >
-            <Typography
-              sx={{ textTransform: "capitalize" }}
-              color="GrayText"
-              variant="subtitle1"
-            >
-              {console.log("FORM ENTRY: " + JSON.stringify(formEntry)) ||
-                `${formEntry.form} - ${formEntry.text}`}
-            </Typography>
-            <Typography
-              sx={{ my: 0.5 }}
-              variant="body2"
-              color="GrayText"
-              fontWeight={550}
-              key={i}
-            >
-              {formEntry.transliteration
-                ? `${formEntry.transliteration}`
-                : null}
-            </Typography>
-            <Typography
-              sx={{ my: 1 }}
-              variant="body2"
-              color="GrayText"
-              key={i}
-              dangerouslySetInnerHTML={{ __html: formEntry.translation.text }}
-            >
-              {/* { {meaning.definitions.length > 1 && `${idx + 1}. `}{" "}} */}
-            </Typography>
-          </Box>
-          // </Tooltip>
-        ))}
-      </Fragment>
-
-      <Fragment key={2}>
-        <Divider sx={{ display: "block", my: 3 }} />
-
-        <Stack
-          direction="row"
-          alignItems="center"
-          justifyContent="space-between"
-          sx={{
-            mt: 3,
-            background:
-              "linear-gradient(90.17deg, #212BBB 0.14%, #0F133A 98.58%)",
-            boxShadow: "0px 10px 20px rgba(19, 23, 71, 0.25)",
-            px: 4,
-            py: 5,
-            color: "white",
-            borderRadius: 2,
-          }}
-        >
-          <Typography sx={{ textTransform: "capitalize" }} variant="h6">
-            Nouns
-          </Typography>
-          {/* {
-          <IconButton>
-            <PlayIcon />
-          </IconButton>
-        } */}
-        </Stack>
-
-        {rootInfo["nouns"] &&
-          rootInfo["nouns"].map((nounEntry, i) => (
-            <Box
-              key={Math.random()}
-              sx={{
-                boxShadow: "0px 10px 25px rgba(0, 0, 0, 0.05)",
-                backgroundColor: "#fff",
-                p: 2,
-                borderRadius: 2,
-                mt: 3,
-              }}
-            >
-              <Typography color="GrayText" variant="subtitle1">
-                {`${nounEntry["text"]} ${
-                  nounEntry["plural"]["text"]
-                    ? `pl. ${nounEntry["plural"]["text"]}`
-                    : ""
-                }`}
-              </Typography>
-              <Typography
-                sx={{ my: 0.5 }}
-                variant="body2"
-                color="GrayText"
-                fontWeight={550}
-                key={i}
-              >
-                {nounEntry.transliteration
-                  ? `${nounEntry.transliteration}`
-                  : null}
-              </Typography>
-              <Typography
-                sx={{ my: 1 }}
-                variant="body2"
-                color="GrayText"
-                key={i}
-                dangerouslySetInnerHTML={{
-                  __html: nounEntry["translation"]["text"],
-                }}
-              ></Typography>
-            </Box>
-          ))}
-      </Fragment>
+      {renderAllRootInfo()}
 
       {/* 
       <Fragment key={123}>
@@ -394,19 +285,195 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
   );
 };
 
-const formToInt = {
-  I: 1,
-  II: 2,
-  III: 3,
-  IV: 4,
-  V: 5,
-  VI: 6,
-  VII: 7,
-  VIII: 8,
-  IX: 9,
-  X: 10,
-};
+function renderDefinition(word, definition, countString) {
+  console.log(`About to render definition: `);
+  console.log(definition);
+  return (
+    <>
+      <Tooltip title="Root">
+        <Stack
+          direction="row"
+          alignItems="center"
+          justifyContent="space-between"
+          sx={{
+            mt: 3,
+            background:
+              "linear-gradient(90.17deg, #191E5D 0.14%, #161F75 98.58%)",
+            boxShadow: "0px 10px 20px rgba(19, 23, 71, 0.25)",
+            px: 4,
+            py: 5,
+            color: "white",
+            borderRadius: 2,
+            position: "relative", // add this to make position absolute work
+          }}
+        >
+          <Box
+            sx={{
+              position: "absolute",
+              top: 0,
+              right: 0,
+              fontSize: "14px",
+              color: "#FFFFFF",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              fontWeight: "bold",
+              marginRight: "10px",
+              marginTop: "10px",
+            }}
+          >
+            {countString}
+          </Box>
+          <Typography sx={{ textTransform: "capitalize" }} variant="h5">
+            {word}
+          </Typography>
+        </Stack>
+        {/* <Stack
+          direction="row"
+          alignItems="center"
+          justifyContent="space-between"
+          sx={{
+            mt: 3,
+            background:
+              "linear-gradient(90.17deg, #191E5D 0.14%, #161F75 98.58%)",
+            boxShadow: "0px 10px 20px rgba(19, 23, 71, 0.25)",
+            px: 4,
+            py: 5,
+            color: "white",
+            borderRadius: 2,
+          }}
+        >
+          <Typography sx={{ textTransform: "capitalize" }} variant="h5">
+            <sup>1</sup> {word}
+          </Typography>
+          {/* {
+            <IconButton>
+              <PlayIcon />
+            </IconButton>
+          } 
+        </Stack>  */}
+      </Tooltip>
 
-function renderDefinition(definition) {}
+      <Fragment key={1}>
+        <Divider varianr="inset" light={true} sx={{ display: "none", my: 3 }} />
+
+        {definition["definitions"].map((formEntry, i) => (
+          // <Tooltip title={`Verb Form ${form}`}>
+          <Box
+            key={`FormBox-${i}-${countString}`}
+            sx={{
+              boxShadow: "0px 10px 25px rgba(0, 0, 0, 0.05)",
+              backgroundColor: "#fff",
+              p: 2,
+              borderRadius: 2,
+              mt: 3,
+            }}
+          >
+            <Typography
+              sx={{ textTransform: "capitalize" }}
+              color="GrayText"
+              variant="subtitle1"
+            >
+              {console.log("FORM ENTRY: " + JSON.stringify(formEntry)) ||
+                `${formEntry.form} - ${formEntry.text}`}
+            </Typography>
+            <Typography
+              sx={{ my: 0.5 }}
+              variant="body2"
+              color="GrayText"
+              fontWeight={550}
+              key={`FormTransliteration-${i}-${countString}`}
+            >
+              {formEntry.transliteration
+                ? `${formEntry.transliteration}`
+                : null}
+            </Typography>
+            <Typography
+              sx={{ my: 1 }}
+              variant="body2"
+              color="GrayText"
+              key={`FormEntry-${i}`}
+              dangerouslySetInnerHTML={{ __html: formEntry.translation.text }}
+            >
+              {/* { {meaning.definitions.length > 1 && `${idx + 1}. `}{" "}} */}
+            </Typography>
+          </Box>
+          // </Tooltip>
+        ))}
+      </Fragment>
+
+      <Fragment key={`NounsBlock-${countString}`}>
+        <Divider sx={{ display: "block", my: 3 }} />
+
+        <Stack
+          direction="row"
+          alignItems="center"
+          justifyContent="space-between"
+          sx={{
+            mt: 3,
+            background:
+              "linear-gradient(90.17deg, #212BBB 0.14%, #0F133A 98.58%)",
+            boxShadow: "0px 10px 20px rgba(19, 23, 71, 0.25)",
+            px: 4,
+            py: 5,
+            color: "white",
+            borderRadius: 2,
+          }}
+        >
+          <Typography sx={{ textTransform: "capitalize" }} variant="h6">
+            Nouns
+          </Typography>
+          {/* {
+          <IconButton>
+            <PlayIcon />
+          </IconButton>
+        } */}
+        </Stack>
+
+        {definition["nouns"] &&
+          definition["nouns"].map((nounEntry, i) => (
+            <Box
+              key={`NounBox-${i}-${countString}`}
+              sx={{
+                boxShadow: "0px 10px 25px rgba(0, 0, 0, 0.05)",
+                backgroundColor: "#fff",
+                p: 2,
+                borderRadius: 2,
+                mt: 3,
+              }}
+            >
+              <Typography color="GrayText" variant="subtitle1">
+                {`${nounEntry["text"]} ${
+                  nounEntry["plural"]["text"]
+                    ? `pl. ${nounEntry["plural"]["text"]}`
+                    : ""
+                }`}
+              </Typography>
+              <Typography
+                sx={{ my: 0.5 }}
+                variant="body2"
+                color="GrayText"
+                fontWeight={550}
+                key={`NounsEntry-${i}-${countString}`}
+              >
+                {nounEntry.transliteration
+                  ? `${nounEntry.transliteration}`
+                  : null}
+              </Typography>
+              <Typography
+                sx={{ my: 1 }}
+                variant="body2"
+                color="GrayText"
+                key={`NounsDef-${i}-${countString}`}
+                dangerouslySetInnerHTML={{
+                  __html: nounEntry["translation"]["text"],
+                }}
+              ></Typography>
+            </Box>
+          ))}
+      </Fragment>
+    </>
+  );
+}
 
 export default Definition;
