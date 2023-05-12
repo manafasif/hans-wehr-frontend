@@ -23,6 +23,7 @@ import InputAdornment from "@mui/material/InputAdornment";
 import { padding } from "@material-ui/system";
 import { StyledEngineProvider } from "@mui/material/styles";
 import "./styles.css";
+import { toastError } from "../../utils/utils";
 
 function GuestFooter() {
   return (
@@ -81,7 +82,15 @@ const Home = () => {
   const handleSubmit = (event) => {
     event.preventDefault();
     const trimmedWord = word.trim().toLowerCase();
-    if (!trimmedWord || trimmedWord.split(" ").length > 1) return;
+    if (!trimmedWord || trimmedWord.split(" ").length > 1) {
+      if (!trimmedWord) {
+        toastError("Root to search cannot be empty");
+      } else {
+        toastError("Please input one root to search with no spaces");
+      }
+
+      return;
+    }
     history.push(`/search/${trimmedWord}`);
   };
   return (

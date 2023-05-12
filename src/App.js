@@ -7,6 +7,7 @@ import Home from "./components/Home";
 import Bookmarks from "./components/Bookmarks";
 import Definition from "./components/Definition";
 import logger, { LoggerContainer, useLoggerApi } from "logrock";
+import { Analytics } from "@vercel/analytics/react";
 
 const App = () => {
   const [bookmarks, setBookmarks] = useState(
@@ -63,6 +64,7 @@ const App = () => {
           </Grid>
         </Grid>
       </ThemeProvider>
+      <Analytics />
     </LoggerContainer>
   );
 };

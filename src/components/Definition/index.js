@@ -10,17 +10,23 @@ import {
   Button,
   styled,
   Tooltip,
+  FilledInput,
 } from "@material-ui/core";
 import {
   ArrowBack as BackIcon,
   BookmarkBorder as BookmarkIcon,
   Bookmark as BookmarkedIcon,
   PlayArrow as PlayIcon,
+  HomeOutlined as HomeIcon,
 } from "@material-ui/icons";
 import { useParams, useHistory } from "react-router-dom";
 import axios from "axios";
 import logger from "logrock";
-
+import { Search as SearchIcon } from "@material-ui/icons";
+import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
+import InputAdornment from "@mui/material/InputAdornment";
+import { toastError, noResultsAlert } from "../../utils/utils";
+import Swal from "sweetalert2";
 const AlignCenterBox = styled(Box)(({ theme }) => ({
   ...theme.mixins.alignInTheCenter,
 }));
@@ -34,6 +40,25 @@ const CURRENT_RESPONSE_VERS = "1.0";
 logger.warn(`API URL: ${API_URL}`);
 
 const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
+  const [searchInput, setSearchInput] = useState("");
+
+  // handle submission of the search bar
+  const handleInputSubmit = (event) => {
+    event.preventDefault();
+    const trimmedWord = searchInput.trim().toLowerCase();
+    if (!trimmedWord || trimmedWord.split(" ").length > 1) {
+      if (!trimmedWord) {
+        toastError("Root to search cannot be empty");
+      } else {
+        toastError("Please input one root to search with no spaces");
+      }
+
+      return;
+    }
+    history.push(`/search/${trimmedWord}`);
+    window.location.reload();
+  };
+
   const { word } = useParams();
   const history = useHistory();
   // const [definitions, setDefinitions] = useState([]);
@@ -54,7 +79,7 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
   });
 
   function updateState(data) {
-    console.log("update state Data: " + JSON.stringify(data));
+    // console.log("update state Data: " + JSON.stringify(data));
     const newRootInfo = [];
     data.forEach((element) => {
       newRootInfo.push({
@@ -64,7 +89,6 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
     });
 
     setRootInfo(newRootInfo);
-    console.log("Succcessfully updated root info");
     // setDefinitions(data["definition"]);
     // setNouns(data["nouns"]);
     // console.log("New def:" + JSON.stringify(definitions));
@@ -77,8 +101,8 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
     const fetchDefinition = async () => {
       try {
         const resp = await axios.get(API_URL + `/root?root=${word}`);
-        console.log(JSON.stringify(resp.data));
-        console.log("RESPONSE: ", resp.data["data"]);
+        // console.log(JSON.stringify(resp.data));
+        // console.log("RESPONSE: ", resp.data["data"]);
         updateState(resp.data["data"]);
 
         setExist(resp.data["data"].length !== 0);
@@ -101,23 +125,27 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
       }
     };
 
-    // fetchDefinition();
-    if (!isBookmarked) {
-      fetchDefinition();
-    } else if (
-      !bookmarks[word][0] ||
-      bookmarks[word][0]["responseVersion"] !== CURRENT_RESPONSE_VERS
-    ) {
-      // cached entry is expired, fetch again
-      console.log("ReFetching word");
-      fetchDefinition();
-    } else {
-      console.log("Bookmarked word: " + JSON.stringify(bookmarks[word]));
-      updateState(bookmarks[word]);
-      setSuccessfullyConnected(true);
-      setExist(true);
-      setLoaded(true);
+    function getDefinition() {
+      // fetchDefinition();
+      if (!isBookmarked) {
+        fetchDefinition();
+      } else if (
+        !bookmarks[word][0] ||
+        bookmarks[word][0]["responseVersion"] !== CURRENT_RESPONSE_VERS
+      ) {
+        // cached entry is expired, fetch again
+        // console.log("ReFetching word");
+        fetchDefinition();
+      } else {
+        // console.log("Bookmarked word: " + JSON.stringify(bookmarks[word]));
+        updateState(bookmarks[word]);
+        setSuccessfullyConnected(true);
+        setExist(true);
+        setLoaded(true);
+      }
     }
+
+    getDefinition();
   }, []);
 
   function renderAllRootInfo() {
@@ -149,43 +177,108 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
       </AlignCenterBox>
     );
 
-  if (!successfullyConnected)
-    return (
-      <AlignCenterBox>
-        <Typography>
-          Error connecting to API
-          {JSON.stringify(error)}
-        </Typography>
-        <Button
-          variant="contained"
-          sx={{ textTransform: "capitalize", mt: 2 }}
-          onClick={history.goBack}
-        >
-          <b>Go back</b>
-        </Button>
-      </AlignCenterBox>
-    );
+  if (!successfullyConnected) {
+    Swal.fire({
+      icon: "error",
+      title: "API Error",
+      text: `Error connecting to API: ${JSON.stringify(error)}`,
+      confirmButtonText: "Go back",
+    }).then((result) => {
+      if (result.isConfirmed) {
+        history.goBack();
+      }
+    });
+    return renderTopBar();
+    // return (
+    //   <AlignCenterBox>
+    //     <Typography>
+    //       Error connecting to API
+    //       {JSON.stringify(error)}
+    //     </Typography>
+    //     <Button
+    //       variant="contained"
+    //       sx={{ textTransform: "capitalize", mt: 2 }}
+    //       onClick={history.goBack}
+    //     >
+    //       <b>Go back</b>
+    //     </Button>
+    //   </AlignCenterBox>
+    // );
+  }
   if (!exist) {
-    return (
-      <AlignCenterBox>
-        <Typography>Word not found</Typography>
-        <Button
-          variant="contained"
-          sx={{ textTransform: "capitalize", mt: 2 }}
-          onClick={history.goBack}
-        >
-          Go back
-        </Button>
-      </AlignCenterBox>
-    );
+    Swal.fire({
+      icon: "question",
+      title: "No Results",
+      text: `No results found for ${word}`,
+      confirmButtonText: "Go back",
+    }).then((result) => {
+      if (result.isConfirmed) {
+        history.goBack();
+      }
+    });
+    return renderTopBar();
+    // <AlignCenterBox>
+    //   <Typography>Word not found</Typography>
+    //   <Button
+    //     variant="contained"
+    //     sx={{ textTransform: "capitalize", mt: 2 }}
+    //     onClick={history.goBack}
+    //   >
+    //     Go back
+    //   </Button>
+    // </AlignCenterBox>
   }
 
-  return (
-    <>
+  function renderTopBar() {
+    return (
       <Stack direction="row" justifyContent="space-between">
         <IconButton onClick={history.goBack}>
-          <BackIcon sx={{ color: "black" }} />
+          <BackIcon sx={{ color: "black", borderRadius: 0 }} />
         </IconButton>
+        <form onSubmit={handleInputSubmit} spacing={0}></form>
+        <FilledInput
+          value={searchInput}
+          onChange={(event) => setSearchInput(event.target.value)}
+          disableUnderline
+          placeholder="Search for a root"
+          sx={{
+            backgroundColor: "white",
+            borderRadius: 2,
+            boxShadow: "0px 10px 25px rgba(0, 0, 0, 0.05)",
+            "& .MuiFilledInput-input": {
+              p: 2,
+            },
+          }}
+          startAdornment={<SearchIcon color="disabled" />}
+          endAdornment={
+            <Tooltip title="Search">
+              <InputAdornment position="end">
+                <ArrowForwardIcon
+                  aria-label="toggle password visibility"
+                  onClick={handleInputSubmit}
+                  edge="end"
+                  transition="background-color 0.2s ease-in-out"
+                  sx={{
+                    "&:hover": {
+                      color: "black",
+                      backgroundColor: "#BABABA",
+                      borderRadius: "50%",
+                      transition: "background-color 0.2s ease-in-out",
+                    },
+                  }}
+                ></ArrowForwardIcon>
+              </InputAdornment>
+            </Tooltip>
+          }
+        />
+        <form />
+
+        <Tooltip title="Return to Homepage">
+          <IconButton onClick={() => history.push("/")}>
+            <HomeIcon sx={{ color: "black", borderRadius: 0 }}></HomeIcon>
+          </IconButton>
+        </Tooltip>
+
         <Tooltip
           title={isBookmarked ? "Remove from Bookmarks" : "Add to Bookmarks"}
         >
@@ -195,13 +288,19 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
             }
           >
             {isBookmarked ? (
-              <BookmarkedIcon sx={{ color: "black" }} />
+              <BookmarkedIcon sx={{ color: "black", borderRadius: 0 }} />
             ) : (
-              <BookmarkIcon sx={{ color: "black" }} />
+              <BookmarkIcon sx={{ color: "black", borderRadius: 0 }} />
             )}
           </IconButton>
         </Tooltip>
       </Stack>
+    );
+  }
+
+  return (
+    <>
+      {renderTopBar()}
 
       {renderAllRootInfo()}
 
@@ -286,8 +385,6 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
 };
 
 function renderDefinition(word, definition, countString) {
-  console.log(`About to render definition: `);
-  console.log(definition);
   return (
     <>
       <Tooltip title="Root">
@@ -374,8 +471,7 @@ function renderDefinition(word, definition, countString) {
               color="GrayText"
               variant="subtitle1"
             >
-              {console.log("FORM ENTRY: " + JSON.stringify(formEntry)) ||
-                `${formEntry.form} - ${formEntry.text}`}
+              {`${formEntry.form} - ${formEntry.text}`}
             </Typography>
             <Typography
               sx={{ my: 0.5 }}
