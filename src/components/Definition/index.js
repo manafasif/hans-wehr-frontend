@@ -25,7 +25,11 @@ import logger from "logrock";
 import { Search as SearchIcon } from "@material-ui/icons";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import InputAdornment from "@mui/material/InputAdornment";
-import { toastError, noResultsAlert } from "../../utils/utils";
+import {
+  toastError,
+  noResultsAlert,
+  processInputToArabic,
+} from "../../utils/utils";
 import Swal from "sweetalert2";
 const AlignCenterBox = styled(Box)(({ theme }) => ({
   ...theme.mixins.alignInTheCenter,
@@ -55,7 +59,8 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
 
       return;
     }
-    history.push(`/search/${trimmedWord}`);
+    const processedWord = processInputToArabic(trimmedWord);
+    history.push(`/search/${processedWord}`);
     window.location.reload();
   };
 

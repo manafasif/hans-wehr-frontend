@@ -23,7 +23,7 @@ import InputAdornment from "@mui/material/InputAdornment";
 import { padding } from "@material-ui/system";
 import { StyledEngineProvider } from "@mui/material/styles";
 import "./styles.css";
-import { toastError } from "../../utils/utils";
+import { toastError, processInputToArabic } from "../../utils/utils";
 
 function GuestFooter() {
   return (
@@ -91,7 +91,8 @@ const Home = () => {
 
       return;
     }
-    history.push(`/search/${trimmedWord}`);
+    const processedWord = processInputToArabic(trimmedWord);
+    history.push(`/search/${processedWord}`);
   };
   return (
     <Box sx={{ ...theme.mixins.alignInTheCenter }}>
