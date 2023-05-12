@@ -70,4 +70,8 @@ function processInputToArabic(str) {
   return str;
 }
 
-export { toastError, noResultsAlert, processInputToArabic };
+function stripHTMLTags(str) {
+  return str.replace(/<[^>]+>/g, "");
+}
+
+export { toastError, noResultsAlert, processInputToArabic, stripHTMLTags };

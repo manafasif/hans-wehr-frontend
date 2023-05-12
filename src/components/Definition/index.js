@@ -480,6 +480,91 @@ const DefinitionCard = ({ formEntry, i, countString }) => {
   );
 };
 
+const NounCard = ({ nounEntry, i, countString }) => {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
+    setCopied(true);
+    setTimeout(() => {
+      setCopied(false);
+    }, 1000);
+  };
+
+  const buttonStyles = {
+    transition: "opacity 0.5s ease",
+    opacity: copied ? 0 : 1,
+  };
+
+  return (
+    <Box
+      key={`NounBox-${i}-${countString}`}
+      sx={{
+        boxShadow: "0px 10px 25px rgba(0, 0, 0, 0.05)",
+        backgroundColor: "#fff",
+        p: 2,
+        borderRadius: 2,
+        mt: 3,
+        position: "relative",
+      }}
+    >
+      <CopyToClipboard
+        text={`${nounEntry["text"]} ${
+          nounEntry["plural"]["text"]
+            ? `pl. ${nounEntry["plural"]["text"]}`
+            : ""
+        } \n${stripHTMLTags(nounEntry["translation"]["text"])}`}
+        onCopy={handleCopy}
+        key={`NounCopyButton-${i}-${countString}`}
+      >
+        <IconButton
+          size="small"
+          onClick={handleCopy}
+          style={buttonStyles}
+          disabled={copied}
+          sx={{
+            position: "absolute",
+            bottom: 0,
+            right: 0,
+            p: 1,
+            zIndex: 1,
+            color: "gray",
+            "& svg": {
+              fontSize: 14,
+            },
+          }}
+        >
+          <CopyIcon />
+        </IconButton>
+      </CopyToClipboard>
+      <Typography color="GrayText" variant="subtitle1">
+        {`${nounEntry["text"]} ${
+          nounEntry["plural"]["text"]
+            ? `pl. ${nounEntry["plural"]["text"]}`
+            : ""
+        }`}
+      </Typography>
+      <Typography
+        sx={{ my: 0.5 }}
+        variant="body2"
+        color="GrayText"
+        fontWeight={550}
+        key={`NounsEntry-${i}-${countString}`}
+      >
+        {nounEntry.transliteration ? `${nounEntry.transliteration}` : null}
+      </Typography>
+      <Typography
+        sx={{ my: 1 }}
+        variant="body2"
+        color="GrayText"
+        key={`NounsDef-${i}-${countString}`}
+        dangerouslySetInnerHTML={{
+          __html: nounEntry["translation"]["text"],
+        }}
+      ></Typography>
+    </Box>
+  );
+};
+
 function renderDefinition(word, definition, countString) {
   const copied = false;
   return (
@@ -590,44 +675,7 @@ function renderDefinition(word, definition, countString) {
 
         {definition["nouns"] &&
           definition["nouns"].map((nounEntry, i) => (
-            <Box
-              key={`NounBox-${i}-${countString}`}
-              sx={{
-                boxShadow: "0px 10px 25px rgba(0, 0, 0, 0.05)",
-                backgroundColor: "#fff",
-                p: 2,
-                borderRadius: 2,
-                mt: 3,
-              }}
-            >
-              <Typography color="GrayText" variant="subtitle1">
-                {`${nounEntry["text"]} ${
-                  nounEntry["plural"]["text"]
-                    ? `pl. ${nounEntry["plural"]["text"]}`
-                    : ""
-                }`}
-              </Typography>
-              <Typography
-                sx={{ my: 0.5 }}
-                variant="body2"
-                color="GrayText"
-                fontWeight={550}
-                key={`NounsEntry-${i}-${countString}`}
-              >
-                {nounEntry.transliteration
-                  ? `${nounEntry.transliteration}`
-                  : null}
-              </Typography>
-              <Typography
-                sx={{ my: 1 }}
-                variant="body2"
-                color="GrayText"
-                key={`NounsDef-${i}-${countString}`}
-                dangerouslySetInnerHTML={{
-                  __html: nounEntry["translation"]["text"],
-                }}
-              ></Typography>
-            </Box>
+            <NounCard nounEntry={nounEntry} i={i} countString={countString} />
           ))}
       </Fragment>
     </>
