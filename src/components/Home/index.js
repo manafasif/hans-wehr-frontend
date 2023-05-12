@@ -24,6 +24,7 @@ import { padding } from "@material-ui/system";
 import { StyledEngineProvider } from "@mui/material/styles";
 import "./styles.css";
 import { toastError, processInputToArabic } from "../../utils/utils";
+import Swal from "sweetalert2";
 
 function GuestFooter() {
   return (
@@ -79,9 +80,16 @@ const Home = () => {
   //   setSwitchState(event.target.checked ? "Root" : "Noun");
   // };
 
+  const showTransliterations = () => {
+    Swal.fire({
+      title: "Transliterations",
+      html: "<img src='../../../public/assets/transliterations.jpeg' style='width:150px;'>",
+    });
+  };
+
   const handleSubmit = (event) => {
     event.preventDefault();
-    const trimmedWord = word.trim().toLowerCase();
+    const trimmedWord = word.trim();
     if (!trimmedWord || trimmedWord.split(" ").length > 1) {
       if (!trimmedWord) {
         toastError("Root to search cannot be empty");
@@ -166,6 +174,17 @@ const Home = () => {
           />
         </form>
       </Box>
+      {/* <Tooltip title="Type input as English Characters">
+        <Typography
+          color="GrayText"
+          sx={{
+            mb: 2,
+          }}
+          onClick={showTransliterations}
+        >
+          View Transliterations
+        </Typography>
+      </Tooltip> */}
 
       {/* <StyledEngineProvider injectFirst>
         <Box sx={{ display: "flex" }}>

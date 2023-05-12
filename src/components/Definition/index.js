@@ -49,7 +49,7 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
   // handle submission of the search bar
   const handleInputSubmit = (event) => {
     event.preventDefault();
-    const trimmedWord = searchInput.trim().toLowerCase();
+    const trimmedWord = searchInput.trim();
     if (!trimmedWord || trimmedWord.split(" ").length > 1) {
       if (!trimmedWord) {
         toastError("Root to search cannot be empty");
