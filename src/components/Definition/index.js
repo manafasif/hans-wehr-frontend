@@ -31,6 +31,11 @@ import {
   processInputToArabic,
 } from "../../utils/utils";
 import Swal from "sweetalert2";
+
+import { FileCopyOutlined as CopyIcon } from "@mui/icons-material";
+import { CopyToClipboard } from "react-copy-to-clipboard";
+import { stripHTMLTags } from "../../utils/utils";
+
 const AlignCenterBox = styled(Box)(({ theme }) => ({
   ...theme.mixins.alignInTheCenter,
 }));
@@ -389,7 +394,94 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
   );
 };
 
+const DefinitionCard = ({ formEntry, i, countString }) => {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
+    setCopied(true);
+    setTimeout(() => {
+      setCopied(false);
+    }, 1000);
+  };
+
+  const buttonStyles = {
+    transition: "opacity 0.5s ease",
+    opacity: copied ? 0 : 1,
+  };
+
+  return (
+    // <Tooltip title={`Verb Form ${form}`}>
+    <Box
+      key={`FormBox-${i}-${countString}`}
+      sx={{
+        boxShadow: "0px 10px 25px rgba(0, 0, 0, 0.05)",
+        backgroundColor: "#fff",
+        p: 2,
+        borderRadius: 2,
+        mt: 3,
+        position: "relative",
+      }}
+    >
+      <CopyToClipboard
+        text={`${formEntry.form} - ${formEntry.text}\n${stripHTMLTags(
+          formEntry.translation.text
+        )}`}
+        onCopy={handleCopy}
+        key={`CopyButton-${i}-${countString}`}
+      >
+        <IconButton
+          size="small"
+          onClick={handleCopy}
+          style={buttonStyles}
+          disabled={copied}
+          sx={{
+            position: "absolute",
+            bottom: 0,
+            right: 0,
+            p: 1,
+            zIndex: 1,
+            color: "gray",
+            "& svg": {
+              fontSize: 14,
+            },
+          }}
+        >
+          <CopyIcon />
+        </IconButton>
+      </CopyToClipboard>
+
+      <Typography
+        sx={{ textTransform: "capitalize" }}
+        color="GrayText"
+        variant="subtitle1"
+      >
+        {`${formEntry.form} - ${formEntry.text}`}
+      </Typography>
+      <Typography
+        sx={{ my: 0.5 }}
+        variant="body2"
+        color="GrayText"
+        fontWeight={550}
+        key={`FormTransliteration-${i}-${countString}`}
+      >
+        {formEntry.transliteration ? `${formEntry.transliteration}` : null}
+      </Typography>
+      <Typography
+        sx={{ my: 1 }}
+        variant="body2"
+        color="GrayText"
+        key={`FormEntry-${i}`}
+        dangerouslySetInnerHTML={{ __html: formEntry.translation.text }}
+      >
+        {/* { {meaning.definitions.length > 1 && `${idx + 1}. `}{" "}} */}
+      </Typography>
+    </Box>
+    // </Tooltip>
+  );
+};
+
 function renderDefinition(word, definition, countString) {
+  const copied = false;
   return (
     <>
       <Tooltip title="Root">
@@ -459,47 +551,12 @@ function renderDefinition(word, definition, countString) {
       <Fragment key={1}>
         <Divider varianr="inset" light={true} sx={{ display: "none", my: 3 }} />
 
-        {definition["definitions"].map((formEntry, i) => (
-          // <Tooltip title={`Verb Form ${form}`}>
-          <Box
-            key={`FormBox-${i}-${countString}`}
-            sx={{
-              boxShadow: "0px 10px 25px rgba(0, 0, 0, 0.05)",
-              backgroundColor: "#fff",
-              p: 2,
-              borderRadius: 2,
-              mt: 3,
-            }}
-          >
-            <Typography
-              sx={{ textTransform: "capitalize" }}
-              color="GrayText"
-              variant="subtitle1"
-            >
-              {`${formEntry.form} - ${formEntry.text}`}
-            </Typography>
-            <Typography
-              sx={{ my: 0.5 }}
-              variant="body2"
-              color="GrayText"
-              fontWeight={550}
-              key={`FormTransliteration-${i}-${countString}`}
-            >
-              {formEntry.transliteration
-                ? `${formEntry.transliteration}`
-                : null}
-            </Typography>
-            <Typography
-              sx={{ my: 1 }}
-              variant="body2"
-              color="GrayText"
-              key={`FormEntry-${i}`}
-              dangerouslySetInnerHTML={{ __html: formEntry.translation.text }}
-            >
-              {/* { {meaning.definitions.length > 1 && `${idx + 1}. `}{" "}} */}
-            </Typography>
-          </Box>
-          // </Tooltip>
+        {definition["definitions"].map((formEntry, index) => (
+          <DefinitionCard
+            formEntry={formEntry}
+            i={index}
+            countString={countString}
+          />
         ))}
       </Fragment>
 
