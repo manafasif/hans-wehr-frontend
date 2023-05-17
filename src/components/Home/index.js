@@ -80,9 +80,11 @@ const Home = () => {
   //   setSwitchState(event.target.checked ? "Root" : "Noun");
   // };
 
+  // --- this is all the code for the typing animation ---
+
   const passedPlaceholder = "Search for a root like ";
 
-  const rootsToType = ["كتب", "ktb", "فعل", "fel", "نصر", "nSr"];
+  const rootsToType = ["كتب", "ktb", "فعل", "fel", "نصر", "nSr", "ثلج", "vlj"];
 
   const [rootToTypeIndex, setRootToTypeIndex] = useState(0);
   const [ticksSpentAtIndex, setTicksSpentAtIndex] = useState(0);
@@ -90,6 +92,7 @@ const Home = () => {
   const [placeholder, setPlaceholder] = useState(passedPlaceholder.slice(0, 0));
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
 
+  // defines number of timer intervals to spend on the completed word
   const TICKS_ON_COMPLETED_WORD = 3;
 
   useEffect(() => {
