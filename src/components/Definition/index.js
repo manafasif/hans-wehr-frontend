@@ -58,17 +58,44 @@ const CURRENT_RESPONSE_VERS = "1.0";
 logger.warn(`API URL: ${API_URL}`);
 
 // code to handle error dialog
-const ReportErrorDialog = ({ open, handleClose, word }) => {
+const ReportErrorDialog = ({ open, handleClose, word, errorType }) => {
+  const [errorDescription, setErrorDescription] = useState("");
+  if (!errorType) {
+    errorType = "ENTRY_ERROR";
+  }
   const handleErrorReportSubmit = (event) => {
+    const feedbackPostOptions = {
+      method: "POST",
+      url: API_URL + `/feedback`,
+      headers: {
+        "content-type": "application/json",
+      },
+      data: {
+        type: errorType,
+        root: word,
+        message: errorDescription,
+      },
+    };
+
+    axios
+      .request(feedbackPostOptions)
+      .then(function (response) {
+        console.log(response.data);
+      })
+      .catch(function (error) {
+        console.error(error);
+        if (error.response) {
+          console.error(error.response);
+        }
+      });
+
     console.log(`submitted error report for ${word}`);
     handleClose();
   };
 
-  const [errorDescription, setErrorDescription] = useState("");
-
   return (
     <Dialog open={open} onClose={handleClose}>
-      <DialogTitle>Report Error</DialogTitle>
+      <DialogTitle>Report Error for {word}</DialogTitle>
       <DialogContent>
         {/* Add your form components here */}
         {/* Example: */}
@@ -131,13 +158,133 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
   const [error, setError] = useState(null);
   // const [audio, setAudio] = useState(null);
 
+  const [reportErrorOpen, setReportErrorOpen] = useState(false);
+
   const isBookmarked = Object.keys(bookmarks).includes(word);
 
-  const DottedDivider = styled(Divider)({
-    border: 0,
-    borderTop: "1px dotted #ccc",
-    margin: "24px 0",
-  });
+  // const DottedDivider = styled(Divider)({
+  //   border: 0,
+  //   borderTop: "1px dotted #ccc",
+  //   margin: "24px 0",
+  // });
+
+  const TopBarEndAdornment = () => {
+    return (
+      <Tooltip title="Search">
+        <InputAdornment position="end">
+          <ArrowForwardIcon
+            aria-label="toggle password visibility"
+            onClick={handleInputSubmit}
+            edge="end"
+            transition="background-color 0.2s ease-in-out"
+            sx={{
+              "&:hover": {
+                color: "black",
+                backgroundColor: "#BABABA",
+                borderRadius: "50%",
+                transition: "background-color 0.2s ease-in-out",
+              },
+            }}
+          ></ArrowForwardIcon>
+        </InputAdornment>
+      </Tooltip>
+    );
+  };
+
+  const TopBar = () => {
+    return (
+      <Stack direction="row" justifyContent="space-between">
+        <IconButton
+          onClick={() => {
+            setLoaded(false);
+            history.goBack();
+          }}
+        >
+          <BackIcon sx={{ color: "black", borderRadius: 0 }} />
+        </IconButton>
+        {/* <form onSubmit={handleInputSubmit} spacing={0}>
+        <form
+            <FilledInput
+              value={searchInput}
+              onChange={(event) => setSearchInput(event.target.value)}
+              disableUnderline
+              placeholder="Search for a root"
+              sx={{
+                backgroundColor: "white",
+                borderRadius: 2,
+                boxShadow: "0px 10px 25px rgba(0, 0, 0, 0.05)",
+                "& .MuiFilledInput-input": {
+                  p: 2,
+                },
+              }}
+              startAdornment={<SearchIcon color="disabled" />}
+              endAdornment={
+                <Tooltip title="Search">
+                  <InputAdornment position="end">
+                    <ArrowForwardIcon
+                      aria-label="toggle password visibility"
+                      onClick={handleInputSubmit}
+                      edge="end"
+                      transition="background-color 0.2s ease-in-out"
+                      sx={{
+                        "&:hover": {
+                          color: "black",
+                          backgroundColor: "#BABABA",
+                          borderRadius: "50%",
+                          transition: "background-color 0.2s ease-in-out",
+                        },
+                      }}
+                    ></ArrowForwardIcon>
+                  </InputAdornment>
+                </Tooltip>
+              } */}
+
+        <Box sx={{ width: "360px" }}>
+          <form onSubmit={handleInputSubmit} spacing={0}>
+            <FilledInput
+              value={searchInput}
+              onChange={(event) => setSearchInput(event.target.value)}
+              disableUnderline
+              placeholder="Search for a root"
+              sx={{
+                my: 4,
+                backgroundColor: "white",
+                borderRadius: 2,
+                boxShadow: "0px 10px 25px rgba(0, 0, 0, 0.05)",
+                "& .MuiFilledInput-input": {
+                  p: 2,
+                },
+              }}
+              startAdornment={<SearchIcon color="disabled" />}
+              endAdornment={<TopBarEndAdornment />}
+            />
+          </form>
+        </Box>
+
+        <Tooltip title="Return to Homepage">
+          <IconButton onClick={() => history.push("/")}>
+            <HomeIcon sx={{ color: "black", borderRadius: 0 }}></HomeIcon>
+          </IconButton>
+        </Tooltip>
+
+        <Tooltip
+          title={isBookmarked ? "Remove from Bookmarks" : "Add to Bookmarks"}
+        >
+          <IconButton
+            onClick={() =>
+              isBookmarked ? removeBookmark(word) : addBookmark(word, rootInfo)
+            }
+          >
+            {isBookmarked ? (
+              <BookmarkedIcon sx={{ color: "black", borderRadius: 0 }} />
+            ) : (
+              <BookmarkIcon sx={{ color: "black", borderRadius: 0 }} />
+            )}
+          </IconButton>
+        </Tooltip>
+      </Stack>
+    );
+  };
 
   // updates state after retrieving root data from API
   function updateState(data) {
@@ -265,134 +412,38 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
       icon: "question",
       title: "No Results",
       text: `No results found for ${word}`,
-      confirmButtonText: "Go back",
+      showCancelButton: true,
+      confirmButtonText: "Report Error",
+      cancelButtonText: "Go back",
+      reverseButtons: true,
     }).then((result) => {
       if (result.isConfirmed) {
-        // setLoaded(false);
+        //  report error
+        setReportErrorOpen(true);
+        Swal.close();
+      } else if (result.dismiss === Swal.DismissReason.cancel) {
+        // go back
+        setLoaded(false);
         history.goBack();
         // window.location.reload();
       }
     });
-    return <TopBar />;
-  }
-
-  const TopBarEndAdornment = () => {
     return (
-      <Tooltip title="Search">
-        <InputAdornment position="end">
-          <ArrowForwardIcon
-            aria-label="toggle password visibility"
-            onClick={handleInputSubmit}
-            edge="end"
-            transition="background-color 0.2s ease-in-out"
-            sx={{
-              "&:hover": {
-                color: "black",
-                backgroundColor: "#BABABA",
-                borderRadius: "50%",
-                transition: "background-color 0.2s ease-in-out",
-              },
-            }}
-          ></ArrowForwardIcon>
-        </InputAdornment>
-      </Tooltip>
-    );
-  };
-
-  const TopBar = () => {
-    return (
-      <Stack direction="row" justifyContent="space-between">
-        <IconButton
-          onClick={() => {
+      <>
+        <ReportErrorDialog
+          errorType={"MISSING_ENTRY_ERROR"}
+          open={reportErrorOpen}
+          word={word}
+          handleClose={() => {
+            setReportErrorOpen(false);
             setLoaded(false);
             history.goBack();
           }}
-        >
-          <BackIcon sx={{ color: "black", borderRadius: 0 }} />
-        </IconButton>
-        {/* <form onSubmit={handleInputSubmit} spacing={0}>
-        <form
-            <FilledInput
-              value={searchInput}
-              onChange={(event) => setSearchInput(event.target.value)}
-              disableUnderline
-              placeholder="Search for a root"
-              sx={{
-                backgroundColor: "white",
-                borderRadius: 2,
-                boxShadow: "0px 10px 25px rgba(0, 0, 0, 0.05)",
-                "& .MuiFilledInput-input": {
-                  p: 2,
-                },
-              }}
-              startAdornment={<SearchIcon color="disabled" />}
-              endAdornment={
-                <Tooltip title="Search">
-                  <InputAdornment position="end">
-                    <ArrowForwardIcon
-                      aria-label="toggle password visibility"
-                      onClick={handleInputSubmit}
-                      edge="end"
-                      transition="background-color 0.2s ease-in-out"
-                      sx={{
-                        "&:hover": {
-                          color: "black",
-                          backgroundColor: "#BABABA",
-                          borderRadius: "50%",
-                          transition: "background-color 0.2s ease-in-out",
-                        },
-                      }}
-                    ></ArrowForwardIcon>
-                  </InputAdornment>
-                </Tooltip>
-              } */}
-
-        <Box sx={{ width: "360px" }}>
-          <form onSubmit={handleInputSubmit} spacing={0}>
-            <FilledInput
-              value={searchInput}
-              onChange={(event) => setSearchInput(event.target.value)}
-              disableUnderline
-              placeholder="Search for a root"
-              sx={{
-                my: 4,
-                backgroundColor: "white",
-                borderRadius: 2,
-                boxShadow: "0px 10px 25px rgba(0, 0, 0, 0.05)",
-                "& .MuiFilledInput-input": {
-                  p: 2,
-                },
-              }}
-              startAdornment={<SearchIcon color="disabled" />}
-              endAdornment={<TopBarEndAdornment />}
-            />
-          </form>
-        </Box>
-
-        <Tooltip title="Return to Homepage">
-          <IconButton onClick={() => history.push("/")}>
-            <HomeIcon sx={{ color: "black", borderRadius: 0 }}></HomeIcon>
-          </IconButton>
-        </Tooltip>
-
-        <Tooltip
-          title={isBookmarked ? "Remove from Bookmarks" : "Add to Bookmarks"}
-        >
-          <IconButton
-            onClick={() =>
-              isBookmarked ? removeBookmark(word) : addBookmark(word, rootInfo)
-            }
-          >
-            {isBookmarked ? (
-              <BookmarkedIcon sx={{ color: "black", borderRadius: 0 }} />
-            ) : (
-              <BookmarkIcon sx={{ color: "black", borderRadius: 0 }} />
-            )}
-          </IconButton>
-        </Tooltip>
-      </Stack>
+        />
+        <TopBar />
+      </>
     );
-  };
+  }
 
   return (
     <>
