@@ -110,15 +110,19 @@ const Home = () => {
           justifyContent: "center",
           alignItems: "center",
           width: {
-            xs: "200px",
-            sm: "300px",
-            md: "400px",
-            lg: "500px",
-            xl: "600px",
+            xs: "400px",
+            sm: "400px",
+            md: "500px",
+            lg: "600px",
+            xl: "700px",
           },
         }}
       >
-        <img src="/assets/book.png" alt="Book" />
+        <img
+          src="/assets/book.png"
+          alt="Book"
+          style={{ maxWidth: "100%", height: "auto" }}
+        />
       </Box>
 
       <Typography

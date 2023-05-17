@@ -6,6 +6,8 @@ import {
   IconButton,
   Divider,
   CircularProgress,
+  useTheme,
+  Button,
   styled,
   Tooltip,
   FilledInput,
@@ -39,7 +41,6 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Button,
 } from "@mui/material";
 
 import ReportProblemIcon from "@mui/icons-material/ReportProblem";
@@ -61,7 +62,6 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
 
   // handle submission of the search bar
   const handleInputSubmit = (event) => {
-    console.log("SUBMITTED");
     event.preventDefault();
     const trimmedWord = searchInput.trim();
     if (!trimmedWord || trimmedWord.split(" ").length > 1) {
@@ -97,8 +97,8 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
     margin: "24px 0",
   });
 
-  // updates state after retrieving root data from API
   function updateState(data) {
+    // console.log("update state Data: " + JSON.stringify(data));
     const newRootInfo = [];
     data.forEach((element) => {
       newRootInfo.push({
@@ -116,17 +116,20 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
     // const url = phonetics[0].audio.replace("//ssl", "https://ssl");
     // setAudio(new Audio(url));
   }
-
-  // handles retrieving data from API and sets state accordingly
   useEffect(() => {
     const fetchDefinition = async () => {
       try {
         const resp = await axios.get(API_URL + `/root?root=${word}`);
+        // console.log(JSON.stringify(resp.data));
+        // console.log("RESPONSE: ", resp.data["data"]);
         updateState(resp.data["data"]);
 
         setExist(resp.data["data"].length !== 0);
+
+        // updateState()
         setSuccessfullyConnected(true);
         setLoaded(true);
+        // console.log("Set to true");
       } catch (err) {
         console.error(err);
         setError(err);
@@ -137,22 +140,23 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
         }
         setExist(false);
         setLoaded(true);
+        // console.log("Set to false");
       }
     };
 
-    // handles retreiving definition, either from API or cache
     function getDefinition() {
+      // fetchDefinition();
       if (!isBookmarked) {
-        // definition is cached so retrieve from there
         fetchDefinition();
       } else if (
         !bookmarks[word][0] ||
         bookmarks[word][0]["responseVersion"] !== CURRENT_RESPONSE_VERS
       ) {
-        // definition needs to be rehydrated from bookmarks
+        // cached entry is expired, fetch again
+        // console.log("ReFetching word");
         fetchDefinition();
       } else {
-        // retrieve from bookmarks (local storage)
+        // console.log("Bookmarked word: " + JSON.stringify(bookmarks[word]));
         updateState(bookmarks[word]);
         setSuccessfullyConnected(true);
         setExist(true);
@@ -163,37 +167,29 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
     getDefinition();
   }, []);
 
-  // renders all root definitions on the page
-  const AllRootDefinitions = () => {
+  function renderAllRootInfo() {
     if (rootInfo.length === 1) {
-      return (
-        <SingleDefinition
-          word={word}
-          definition={rootInfo[0]}
-          countString={null}
-        />
-      );
+      return renderDefinition(word, rootInfo[0], null);
+    } else {
+      const out = [];
+      rootInfo.forEach((rootDefinition, index) => {
+        out.push(
+          renderDefinition(
+            word,
+            rootDefinition,
+            `${index + 1} of ${rootInfo.length}`
+          )
+        );
+
+        if (index != rootInfo.length - 1) {
+          out.push(<Divider light={false} sx={{ display: "block", my: 3 }} />);
+        }
+      });
+      return out;
     }
-    rootInfo.map((rootDefinition, index) => {
-      // render each definition
-      return (
-        <>
-          <SingleDefinition
-            word={word}
-            definition={rootDefinition}
-            countString={`${index + 1} of ${rootInfo.length}`}
-          />
-          ;
-          {index != rootInfo.length - 1 ? (
-            <Divider light={false} sx={{ display: "block", my: 3 }} />
-          ) : null}
-        </>
-      );
-    });
-  };
+  }
 
   if (!loaded)
-    // show loading sign
     return (
       <AlignCenterBox>
         <CircularProgress />
@@ -201,7 +197,6 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
     );
 
   if (!successfullyConnected) {
-    // inform user of connection error
     Swal.fire({
       icon: "error",
       title: "API Error",
@@ -212,10 +207,24 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
         history.goBack();
       }
     });
-    return <TopBar />;
+    return renderTopBar();
+    // return (
+    //   <AlignCenterBox>
+    //     <Typography>
+    //       Error connecting to API
+    //       {JSON.stringify(error)}
+    //     </Typography>
+    //     <Button
+    //       variant="contained"
+    //       sx={{ textTransform: "capitalize", mt: 2 }}
+    //       onClick={history.goBack}
+    //     >
+    //       <b>Go back</b>
+    //     </Button>
+    //   </AlignCenterBox>
+    // );
   }
   if (!exist) {
-    // alert user that no root was found
     Swal.fire({
       icon: "question",
       title: "No Results",
@@ -226,96 +235,62 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
         history.goBack();
       }
     });
-    return <TopBar />;
+    return renderTopBar();
+    // <AlignCenterBox>
+    //   <Typography>Word not found</Typography>
+    //   <Button
+    //     variant="contained"
+    //     sx={{ textTransform: "capitalize", mt: 2 }}
+    //     onClick={history.goBack}
+    //   >
+    //     Go back
+    //   </Button>
+    // </AlignCenterBox>
   }
 
-  const TopBarEndAdornment = () => {
-    return (
-      <Tooltip title="Search">
-        <InputAdornment position="end">
-          <ArrowForwardIcon
-            aria-label="toggle password visibility"
-            onClick={handleInputSubmit}
-            edge="end"
-            transition="background-color 0.2s ease-in-out"
-            sx={{
-              "&:hover": {
-                color: "black",
-                backgroundColor: "#BABABA",
-                borderRadius: "50%",
-                transition: "background-color 0.2s ease-in-out",
-              },
-            }}
-          ></ArrowForwardIcon>
-        </InputAdornment>
-      </Tooltip>
-    );
-  };
-
-  const TopBar = () => {
+  function renderTopBar() {
     return (
       <Stack direction="row" justifyContent="space-between">
         <IconButton onClick={history.goBack}>
           <BackIcon sx={{ color: "black", borderRadius: 0 }} />
         </IconButton>
-        {/* <form onSubmit={handleInputSubmit} spacing={0}>
-        <form
-            <FilledInput
-              value={searchInput}
-              onChange={(event) => setSearchInput(event.target.value)}
-              disableUnderline
-              placeholder="Search for a root"
-              sx={{
-                backgroundColor: "white",
-                borderRadius: 2,
-                boxShadow: "0px 10px 25px rgba(0, 0, 0, 0.05)",
-                "& .MuiFilledInput-input": {
-                  p: 2,
-                },
-              }}
-              startAdornment={<SearchIcon color="disabled" />}
-              endAdornment={
-                <Tooltip title="Search">
-                  <InputAdornment position="end">
-                    <ArrowForwardIcon
-                      aria-label="toggle password visibility"
-                      onClick={handleInputSubmit}
-                      edge="end"
-                      transition="background-color 0.2s ease-in-out"
-                      sx={{
-                        "&:hover": {
-                          color: "black",
-                          backgroundColor: "#BABABA",
-                          borderRadius: "50%",
-                          transition: "background-color 0.2s ease-in-out",
-                        },
-                      }}
-                    ></ArrowForwardIcon>
-                  </InputAdornment>
-                </Tooltip>
-              } */}
-
-        <Box sx={{ width: "360px" }}>
-          <form onSubmit={handleInputSubmit} spacing={0}>
-            <FilledInput
-              value={word}
-              onChange={(event) => setSearchInput(event.target.value)}
-              disableUnderline
-              placeholder="Search for a root"
-              sx={{
-                my: 4,
-                backgroundColor: "white",
-                borderRadius: 2,
-                boxShadow: "0px 10px 25px rgba(0, 0, 0, 0.05)",
-                "& .MuiFilledInput-input": {
-                  p: 2,
-                },
-              }}
-              startAdornment={<SearchIcon color="disabled" />}
-              endAdornment={<TopBarEndAdornment />}
-            />
-          </form>
-        </Box>
+        <form onSubmit={handleInputSubmit} spacing={0}></form>
+        <FilledInput
+          value={searchInput}
+          onChange={(event) => setSearchInput(event.target.value)}
+          disableUnderline
+          placeholder="Search for a root"
+          sx={{
+            backgroundColor: "white",
+            borderRadius: 2,
+            boxShadow: "0px 10px 25px rgba(0, 0, 0, 0.05)",
+            "& .MuiFilledInput-input": {
+              p: 2,
+            },
+          }}
+          startAdornment={<SearchIcon color="disabled" />}
+          endAdornment={
+            <Tooltip title="Search">
+              <InputAdornment position="end">
+                <ArrowForwardIcon
+                  aria-label="toggle password visibility"
+                  onClick={handleInputSubmit}
+                  edge="end"
+                  transition="background-color 0.2s ease-in-out"
+                  sx={{
+                    "&:hover": {
+                      color: "black",
+                      backgroundColor: "#BABABA",
+                      borderRadius: "50%",
+                      transition: "background-color 0.2s ease-in-out",
+                    },
+                  }}
+                ></ArrowForwardIcon>
+              </InputAdornment>
+            </Tooltip>
+          }
+        />
+        <form />
 
         <Tooltip title="Return to Homepage">
           <IconButton onClick={() => history.push("/")}>
@@ -340,13 +315,13 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
         </Tooltip>
       </Stack>
     );
-  };
+  }
 
   return (
     <>
-      <TopBar />
+      {renderTopBar()}
 
-      <AllRootDefinitions />
+      {renderAllRootInfo()}
 
       {/* 
       <Fragment key={123}>
@@ -428,7 +403,6 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
   );
 };
 
-// renders a single form for the root definition
 const DefinitionCard = ({ formEntry, i, countString }) => {
   const [copied, setCopied] = useState(false);
 
@@ -515,7 +489,6 @@ const DefinitionCard = ({ formEntry, i, countString }) => {
   );
 };
 
-// renders a single card for a noun
 const NounCard = ({ nounEntry, i, countString }) => {
   const [copied, setCopied] = useState(false);
 
@@ -601,17 +574,8 @@ const NounCard = ({ nounEntry, i, countString }) => {
   );
 };
 
-const SingleDefinition = ({ word, definition, countString }) => {
-  const [reportErrorOpen, setReportErrorOpen] = useState(false);
-
-  const handleReportError = () => {
-    setReportErrorOpen(true);
-  };
-
-  const handleCloseReportError = () => {
-    setReportErrorOpen(false);
-  };
-
+function renderDefinition(word, definition, countString) {
+  const copied = false;
   return (
     <>
       <Tooltip title="Root">
@@ -665,27 +629,13 @@ const SingleDefinition = ({ word, definition, countString }) => {
                   fontSize: 14,
                 },
               }}
-              onClick={handleReportError}
+              onClick={() => {
+                console.log("Clicked report error");
+              }}
             >
               <ReportProblemIcon />
             </IconButton>
           </Tooltip>
-
-          {/* Report Error Form Dialog */}
-          <Dialog open={reportErrorOpen} onClose={handleCloseReportError}>
-            <DialogTitle>Report Error</DialogTitle>
-            <DialogContent>
-              {/* Add your form components here */}
-              {/* Example: */}
-              <Typography>Report error form goes here</Typography>
-            </DialogContent>
-            <DialogActions>
-              <Button onClick={handleCloseReportError}>Cancel</Button>
-              <Button onClick={handleCloseReportError} color="primary">
-                Submit
-              </Button>
-            </DialogActions>
-          </Dialog>
         </Stack>
         {/* <Stack
           direction="row"
@@ -760,6 +710,6 @@ const SingleDefinition = ({ word, definition, countString }) => {
       </Fragment>
     </>
   );
-};
+}
 
 export default Definition;

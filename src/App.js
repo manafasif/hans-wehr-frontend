@@ -5,7 +5,7 @@ import { BrowserRouter as Router, Route } from "react-router-dom";
 //
 import Home from "./components/Home";
 import Bookmarks from "./components/Bookmarks";
-import Definition from "./components/Definition";
+import Definition from "./components/Definition/index_old";
 import logger, { LoggerContainer, useLoggerApi } from "logrock";
 import { Analytics } from "@vercel/analytics/react";
 
