@@ -40,6 +40,7 @@ import {
   DialogContent,
   DialogActions,
   Button,
+  TextField,
 } from "@mui/material";
 
 import ReportProblemIcon from "@mui/icons-material/ReportProblem";
@@ -55,6 +56,45 @@ if (LOCAL === "1") {
 }
 const CURRENT_RESPONSE_VERS = "1.0";
 logger.warn(`API URL: ${API_URL}`);
+
+// code to handle error dialog
+const ReportErrorDialog = ({ open, handleClose, word }) => {
+  const handleErrorReportSubmit = (event) => {
+    console.log(`submitted error report for ${word}`);
+    handleClose();
+  };
+
+  const [errorDescription, setErrorDescription] = useState("");
+
+  return (
+    <Dialog open={open} onClose={handleClose}>
+      <DialogTitle>Report Error</DialogTitle>
+      <DialogContent>
+        {/* Add your form components here */}
+        {/* Example: */}
+        <Typography>
+          Please provide a brief description of the error:
+        </Typography>
+        <FilledInput
+          multiline
+          maxRows={4}
+          disableUnderline
+          placeholder="Error description"
+          value={errorDescription}
+          onChange={(event) => setErrorDescription(event.target.value)}
+          fullWidth
+          variant="filled"
+        />
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={handleClose}>Cancel</Button>
+        <Button onClick={handleErrorReportSubmit} color="primary">
+          Submit
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+};
 
 const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
   const [searchInput, setSearchInput] = useState("");
@@ -122,7 +162,7 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
   // handles retrieving data from API and sets state accordingly
   useEffect(() => {
     const fetchDefinition = async () => {
-      console.log("Useeffect Fired");
+      // console.log("Useeffect Fired");
       try {
         const resp = await axios.get(API_URL + `/root?root=${word}`);
         updateState(resp.data["data"]);
@@ -738,20 +778,11 @@ const SingleDefinition = ({ word, definition, countString }) => {
           </Tooltip>
 
           {/* Report Error Form Dialog */}
-          <Dialog open={reportErrorOpen} onClose={handleCloseReportError}>
-            <DialogTitle>Report Error</DialogTitle>
-            <DialogContent>
-              {/* Add your form components here */}
-              {/* Example: */}
-              <Typography>Report error not supported yet! </Typography>
-            </DialogContent>
-            <DialogActions>
-              <Button onClick={handleCloseReportError}>Cancel</Button>
-              <Button onClick={handleCloseReportError} color="primary">
-                Submit
-              </Button>
-            </DialogActions>
-          </Dialog>
+          <ReportErrorDialog
+            open={reportErrorOpen}
+            handleClose={handleCloseReportError}
+            word={word}
+          />
         </Stack>
         {/* <Stack
           direction="row"
