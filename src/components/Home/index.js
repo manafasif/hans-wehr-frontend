@@ -84,7 +84,20 @@ const Home = () => {
 
   const passedPlaceholder = "Search for a root like ";
 
-  const rootsToType = ["كتب", "ktb", "فعل", "fel", "نصر", "nSr", "ثلج", "vlj"];
+  const rootsToType = [
+    "كتب",
+    "ktb",
+    "فعل",
+    "fel",
+    "نصر",
+    "nSr",
+    "ثلج",
+    "vlj",
+    "زلزل",
+    "zlzl",
+    "ظلم",
+    "Zlm",
+  ];
 
   const [rootToTypeIndex, setRootToTypeIndex] = useState(0);
   const [ticksSpentAtIndex, setTicksSpentAtIndex] = useState(0);
