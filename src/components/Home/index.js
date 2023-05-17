@@ -80,31 +80,46 @@ const Home = () => {
   //   setSwitchState(event.target.checked ? "Root" : "Noun");
   // };
 
-  const AnimatedInput = ({
-    placeholder: passedPlaceholder = "",
-    ...passedProps
-  }) => {
-    const [placeholder, setPlaceholder] = useState(
-      passedPlaceholder.slice(0, 0)
-    );
-    const [placeholderIndex, setPlaceholderIndex] = useState(0);
+  const passedPlaceholder = "Search for a root like ";
 
-    useEffect(() => {
-      const intr = setInterval(() => {
-        setPlaceholder(passedPlaceholder.slice(0, placeholderIndex));
-        if (placeholderIndex + 1 > passedPlaceholder.length) {
-          setPlaceholderIndex(0);
+  const rootsToType = ["كتب", "ktb", "فعل", "fel", "نصر", "nSr"];
+
+  const [rootToTypeIndex, setRootToTypeIndex] = useState(0);
+  const [ticksSpentAtIndex, setTicksSpentAtIndex] = useState(0);
+
+  const [placeholder, setPlaceholder] = useState(passedPlaceholder.slice(0, 0));
+  const [placeholderIndex, setPlaceholderIndex] = useState(0);
+
+  const TICKS_ON_COMPLETED_WORD = 3;
+
+  useEffect(() => {
+    const intr = setInterval(() => {
+      setPlaceholder(
+        passedPlaceholder +
+          rootsToType[rootToTypeIndex].slice(0, placeholderIndex)
+      );
+      if (placeholderIndex + 1 > rootsToType[rootToTypeIndex].length) {
+        if (ticksSpentAtIndex < TICKS_ON_COMPLETED_WORD) {
+          setTicksSpentAtIndex(ticksSpentAtIndex + 1);
         } else {
-          setPlaceholderIndex(placeholderIndex + 1);
-        }
-      }, 150);
-      return () => {
-        clearInterval(intr);
-      };
-    });
+          setPlaceholderIndex(0);
+          setTicksSpentAtIndex(0);
 
-    return <FilledInput {...passedProps} placeholder={placeholder} />;
-  };
+          if (rootToTypeIndex >= rootsToType.length - 1) {
+            // reached last root, loop around
+            setRootToTypeIndex(0);
+          } else {
+            setRootToTypeIndex(rootToTypeIndex + 1);
+          }
+        }
+      } else {
+        setPlaceholderIndex(placeholderIndex + 1);
+      }
+    }, 200);
+    return () => {
+      clearInterval(intr);
+    };
+  });
 
   const showTransliterations = () => {
     Swal.fire({
@@ -165,11 +180,11 @@ const Home = () => {
       {/* <b>{switchState}</b> */}
       <Box sx={{ width: "360px" }}>
         <form onSubmit={handleSubmit} spacing={0}>
-          <AnimatedInput
+          <FilledInput
             value={word}
             onChange={(event) => setWord(event.target.value)}
             disableUnderline
-            placeholder="Search for a root"
+            placeholder={placeholder}
             sx={{
               my: 4,
               backgroundColor: "white",
