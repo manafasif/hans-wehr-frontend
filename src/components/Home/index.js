@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Box,
   Typography,
@@ -80,6 +80,32 @@ const Home = () => {
   //   setSwitchState(event.target.checked ? "Root" : "Noun");
   // };
 
+  const AnimatedInput = ({
+    placeholder: passedPlaceholder = "",
+    ...passedProps
+  }) => {
+    const [placeholder, setPlaceholder] = useState(
+      passedPlaceholder.slice(0, 0)
+    );
+    const [placeholderIndex, setPlaceholderIndex] = useState(0);
+
+    useEffect(() => {
+      const intr = setInterval(() => {
+        setPlaceholder(passedPlaceholder.slice(0, placeholderIndex));
+        if (placeholderIndex + 1 > passedPlaceholder.length) {
+          setPlaceholderIndex(0);
+        } else {
+          setPlaceholderIndex(placeholderIndex + 1);
+        }
+      }, 150);
+      return () => {
+        clearInterval(intr);
+      };
+    });
+
+    return <FilledInput {...passedProps} placeholder={placeholder} />;
+  };
+
   const showTransliterations = () => {
     Swal.fire({
       title: "Transliterations",
@@ -139,7 +165,7 @@ const Home = () => {
       {/* <b>{switchState}</b> */}
       <Box sx={{ width: "360px" }}>
         <form onSubmit={handleSubmit} spacing={0}>
-          <FilledInput
+          <AnimatedInput
             value={word}
             onChange={(event) => setWord(event.target.value)}
             disableUnderline
@@ -257,7 +283,7 @@ const Home = () => {
           <BookmarkIcon />
         </IconButton>
       </Tooltip>
-      <GuestFooter />
+      {/* <GuestFooter /> */}
     </Box>
   );
 };
