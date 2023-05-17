@@ -74,8 +74,10 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
       return;
     }
     const processedWord = processInputToArabic(trimmedWord);
+    setLoaded(false);
     history.push(`/search/${processedWord}`);
-    window.location.reload();
+    setSearchInput("");
+    // window.location.reload();
   };
 
   const { word } = useParams();
@@ -120,6 +122,7 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
   // handles retrieving data from API and sets state accordingly
   useEffect(() => {
     const fetchDefinition = async () => {
+      console.log("Useeffect Fired");
       try {
         const resp = await axios.get(API_URL + `/root?root=${word}`);
         updateState(resp.data["data"]);
@@ -161,7 +164,7 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
     }
 
     getDefinition();
-  }, []);
+  }, [word]);
 
   // renders all root definitions on the page
   const AllRootDefinitions = () => {
@@ -209,7 +212,9 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
       confirmButtonText: "Go back",
     }).then((result) => {
       if (result.isConfirmed) {
+        // setLoaded(false);
         history.goBack();
+        // window.location.reload();
       }
     });
     return <TopBar />;
@@ -223,7 +228,9 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
       confirmButtonText: "Go back",
     }).then((result) => {
       if (result.isConfirmed) {
+        // setLoaded(false);
         history.goBack();
+        // window.location.reload();
       }
     });
     return <TopBar />;
@@ -255,7 +262,12 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
   const TopBar = () => {
     return (
       <Stack direction="row" justifyContent="space-between">
-        <IconButton onClick={history.goBack}>
+        <IconButton
+          onClick={() => {
+            setLoaded(false);
+            history.goBack();
+          }}
+        >
           <BackIcon sx={{ color: "black", borderRadius: 0 }} />
         </IconButton>
         {/* <form onSubmit={handleInputSubmit} spacing={0}>
@@ -298,7 +310,7 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
         <Box sx={{ width: "360px" }}>
           <form onSubmit={handleInputSubmit} spacing={0}>
             <FilledInput
-              value={word}
+              value={searchInput}
               onChange={(event) => setSearchInput(event.target.value)}
               disableUnderline
               placeholder="Search for a root"
@@ -344,7 +356,61 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
 
   return (
     <>
-      <TopBar />
+      <Stack direction="row" justifyContent="space-between">
+        <IconButton
+          onClick={() => {
+            setLoaded(false);
+            history.goBack();
+          }}
+        >
+          <BackIcon sx={{ color: "black", borderRadius: 0 }} />
+        </IconButton>
+
+        <Box sx={{ width: "360px" }}>
+          <form onSubmit={handleInputSubmit} spacing={0}>
+            <FilledInput
+              value={searchInput}
+              onChange={(event) => setSearchInput(event.target.value)}
+              disableUnderline
+              placeholder="Search for a root"
+              sx={{
+                backgroundColor: "white",
+                borderRadius: 2,
+                boxShadow: "0px 10px 25px rgba(0, 0, 0, 0.05)",
+                "& .MuiFilledInput-input": {
+                  p: 2,
+                },
+              }}
+              startAdornment={<SearchIcon color="disabled" />}
+              endAdornment={<TopBarEndAdornment />}
+            />
+          </form>
+        </Box>
+
+        <Tooltip title="Return to Homepage">
+          <IconButton onClick={() => history.push("/")}>
+            <HomeIcon sx={{ color: "black", borderRadius: 0 }}></HomeIcon>
+          </IconButton>
+        </Tooltip>
+
+        <Tooltip
+          title={isBookmarked ? "Remove from Bookmarks" : "Add to Bookmarks"}
+        >
+          <IconButton
+            onClick={() =>
+              isBookmarked ? removeBookmark(word) : addBookmark(word, rootInfo)
+            }
+          >
+            {isBookmarked ? (
+              <BookmarkedIcon sx={{ color: "black", borderRadius: 0 }} />
+            ) : (
+              <BookmarkIcon sx={{ color: "black", borderRadius: 0 }} />
+            )}
+          </IconButton>
+        </Tooltip>
+      </Stack>
+
+      {/* <TopBar /> */}
 
       <AllRootDefinitions />
 
@@ -677,7 +743,7 @@ const SingleDefinition = ({ word, definition, countString }) => {
             <DialogContent>
               {/* Add your form components here */}
               {/* Example: */}
-              <Typography>Report error form goes here</Typography>
+              <Typography>Report error not supported yet! </Typography>
             </DialogContent>
             <DialogActions>
               <Button onClick={handleCloseReportError}>Cancel</Button>
