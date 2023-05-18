@@ -6,7 +6,6 @@ import { BrowserRouter as Router, Route } from "react-router-dom";
 import Home from "./components/Home";
 import Bookmarks from "./components/Bookmarks";
 import Definition from "./components/Definition";
-import logger, { LoggerContainer, useLoggerApi } from "logrock";
 import { Analytics } from "@vercel/analytics/react";
 
 const App = () => {
@@ -34,10 +33,7 @@ const App = () => {
   console.log(process.env.REACT_APP_LOCAL === "1");
 
   return (
-    <LoggerContainer
-      sessionID={window.sessionID}
-      active={process.env.REACT_APP_LOCAL === "1"}
-    >
+    <>
       <ThemeProvider theme={theme}>
         <CssBaseline />
         <Grid
@@ -65,7 +61,7 @@ const App = () => {
         </Grid>
       </ThemeProvider>
       <Analytics />
-    </LoggerContainer>
+    </>
   );
 };
 

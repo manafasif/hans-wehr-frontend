@@ -19,7 +19,6 @@ import {
 } from "@material-ui/icons";
 import { useParams, useHistory } from "react-router-dom";
 import axios from "axios";
-import logger from "logrock";
 import { Search as SearchIcon } from "@material-ui/icons";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import InputAdornment from "@mui/material/InputAdornment";
@@ -33,6 +32,8 @@ import Swal from "sweetalert2";
 import { FileCopyOutlined as CopyIcon } from "@mui/icons-material";
 import { CopyToClipboard } from "react-copy-to-clipboard";
 import { stripHTMLTags } from "../../utils/utils";
+
+import { logger } from "../../utils/logger";
 
 import {
   Dialog,
@@ -55,7 +56,7 @@ if (LOCAL === "1") {
   API_URL = "http://localhost:8080";
 }
 const CURRENT_RESPONSE_VERS = "1.0";
-logger.warn(`API URL: ${API_URL}`);
+logger.debug(`API URL: ${API_URL}`);
 
 // code to handle error dialog
 const ReportErrorDialog = ({ open, handleClose, word, errorType }) => {
@@ -64,17 +65,18 @@ const ReportErrorDialog = ({ open, handleClose, word, errorType }) => {
     errorType = "ENTRY_ERROR";
   }
   const handleErrorReportSubmit = (event) => {
+    const feedbackData = {
+      type: errorType,
+      root: word,
+      message: errorDescription,
+    };
     const feedbackPostOptions = {
       method: "POST",
       url: API_URL + `/feedback`,
       headers: {
         "content-type": "application/json",
       },
-      data: {
-        type: errorType,
-        root: word,
-        message: errorDescription,
-      },
+      data: feedbackData,
     };
 
     axios
@@ -83,10 +85,15 @@ const ReportErrorDialog = ({ open, handleClose, word, errorType }) => {
         console.log(response.data);
       })
       .catch(function (error) {
-        console.error(error);
-        if (error.response) {
-          console.error(error.response);
-        }
+        // console.error(error);
+        logger.error(
+          `feedbackError: Error reporting feedback: ${JSON.stringify(
+            feedbackData
+          )} ${error.response}`
+        );
+        // if (error.response) {
+
+        // }
       });
 
     console.log(`submitted error report for ${word}`);
@@ -318,11 +325,14 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
         setSuccessfullyConnected(true);
         setLoaded(true);
       } catch (err) {
-        console.error(err);
+        // console.error(err);
         setError(err);
         if (!err.response) {
+          logger.error(`apiconnection: No response from API`);
           setSuccessfullyConnected(false);
         } else {
+          logger.error(`apiconnection: error in api request: ${err.response}`);
+
           setSuccessfullyConnected(true);
         }
         setExist(false);
@@ -395,7 +405,7 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
     Swal.fire({
       icon: "error",
       title: "API Error",
-      text: `Error connecting to API: ${JSON.stringify(error)}`,
+      text: `Error connecting to the server. The error has been reported.`,
       confirmButtonText: "Go back",
     }).then((result) => {
       if (result.isConfirmed) {

@@ -48,8 +48,8 @@ function processInputToArabic(str) {
   str = str.replace(/h/g, "ه");
   str = str.replace(/H/g, "ح");
   // Include chat arabic?
-  //str = str.replace(/[7]/g,"ح");
-  //str = str.replace(/[3]/g,"ع");
+  str = str.replace(/[7]/g, "ح");
+  str = str.replace(/[3]/g, "ع");
   // Not much iktilaaf over these I guess:
   str = str.replace(/[xX]/g, "خ");
   str = str.replace(/[vV]/g, "ث");
