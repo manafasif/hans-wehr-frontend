@@ -328,6 +328,7 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
         // console.error(err);
         setError(err);
         if (!err.response) {
+          console.log("Error: No response from API", err);
           logger.error(`apiconnection: No response from API`);
           setSuccessfullyConnected(false);
         } else {
@@ -374,22 +375,19 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
         />
       );
     }
-    rootInfo.map((rootDefinition, index) => {
-      // render each definition
-      return (
-        <>
+
+    return (
+      <>
+        {rootInfo.map((rootDefinition, index) => (
           <SingleDefinition
             word={word}
-            definition={rootDefinition}
+            definition={rootInfo[index]}
             countString={`${index + 1} of ${rootInfo.length}`}
+            key={`SingleDefinition-${index}`}
           />
-          ;
-          {index != rootInfo.length - 1 ? (
-            <Divider light={false} sx={{ display: "block", my: 3 }} />
-          ) : null}
-        </>
-      );
-    });
+        ))}
+      </>
+    );
   };
 
   if (!loaded)
@@ -878,44 +876,56 @@ const SingleDefinition = ({ word, definition, countString }) => {
           <DefinitionCard
             formEntry={formEntry}
             i={index}
+            key={`DefinitionCard-${countString}-${index}`}
             countString={countString}
           />
         ))}
       </Fragment>
 
-      <Fragment key={`NounsBlock-${countString}`}>
-        <Divider sx={{ display: "block", my: 3 }} />
+      {definition["nouns"].length ? (
+        <Fragment key={`NounsBlock-${countString}`}>
+          <Divider sx={{ display: "block", my: 3 }} />
 
-        <Stack
-          direction="row"
-          alignItems="center"
-          justifyContent="space-between"
-          sx={{
-            mt: 3,
-            background:
-              "linear-gradient(90.17deg, #212BBB 0.14%, #0F133A 98.58%)",
-            boxShadow: "0px 10px 20px rgba(19, 23, 71, 0.25)",
-            px: 4,
-            py: 5,
-            color: "white",
-            borderRadius: 2,
-          }}
-        >
-          <Typography sx={{ textTransform: "capitalize" }} variant="h6">
-            Nouns
-          </Typography>
-          {/* {
-          <IconButton>
-            <PlayIcon />
-          </IconButton>
-        } */}
-        </Stack>
+          <Stack
+            direction="row"
+            alignItems="center"
+            justifyContent="space-between"
+            sx={{
+              mt: 3,
+              background:
+                "linear-gradient(90.17deg, #212BBB 0.14%, #0F133A 98.58%)",
+              boxShadow: "0px 10px 20px rgba(19, 23, 71, 0.25)",
+              px: 4,
+              py: 5,
+              color: "white",
+              borderRadius: 2,
+            }}
+          >
+            <Typography
+              sx={{ textTransform: "capitalize" }}
+              variant="h6"
+              key={`NounsCard-${countString}`}
+            >
+              Nouns
+            </Typography>
+            {/* {
+  <IconButton>
+    <PlayIcon />
+  </IconButton>
+} */}
+          </Stack>
 
-        {definition["nouns"] &&
-          definition["nouns"].map((nounEntry, i) => (
-            <NounCard nounEntry={nounEntry} i={i} countString={countString} />
-          ))}
-      </Fragment>
+          {definition["nouns"] &&
+            definition["nouns"].map((nounEntry, i) => (
+              <NounCard
+                nounEntry={nounEntry}
+                i={i}
+                key={`NounCard-${countString}-${i}`}
+                countString={countString}
+              />
+            ))}
+        </Fragment>
+      ) : null}
     </>
   );
 };
