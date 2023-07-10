@@ -12,11 +12,11 @@ const Toast = Swal.mixin({
   },
 });
 
-const toastSuccess = (root) => {
+const toastSuccess = (message) => {
   Toast.fire({
     icon: "success",
     title: "Success!",
-    text: `Root entry for ${root} has been updated.`,
+    text: message,
   });
 };
 
@@ -74,4 +74,10 @@ function stripHTMLTags(str) {
   return str.replace(/<[^>]+>/g, "");
 }
 
-export { toastError, noResultsAlert, processInputToArabic, stripHTMLTags };
+export {
+  toastError,
+  noResultsAlert,
+  processInputToArabic,
+  stripHTMLTags,
+  toastSuccess,
+};

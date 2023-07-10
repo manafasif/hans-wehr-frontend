@@ -26,123 +26,71 @@ import "./styles.css";
 import { toastError, processInputToArabic } from "../../utils/utils";
 import Swal from "sweetalert2";
 
-function GuestFooter() {
+// flashcards icon
+import StyleIcon from "@mui/icons-material/Style";
+import TypingAnimation from "./typingAnimation";
+const ButtonsBox = () => {
   return (
-    <Paper
-      sx={{
-        marginTop: "calc(10% + 60px)",
-        width: "100%",
-        position: "fixed",
-        bottom: 0,
-        width: "100%",
-        backgroundColor: "transparent",
-      }}
-      component="footer"
-      square
-    >
-      <Container maxWidth="lg">
-        <Box
+    <Box>
+      <Tooltip title="Bookmarks">
+        <IconButton
+          to="/bookmarks"
+          component={Link}
           sx={{
-            flexGrow: 1,
-            justifyContent: "center",
-            display: "flex",
-            my: 1,
-          }}
-        ></Box>
-
-        <Box
-          sx={{
-            flexGrow: 1,
-            justifyContent: "center",
-            display: "flex",
-            mb: 2,
+            borderRadius: 2,
+            p: 2,
+            marginRight: 2,
+            color: "#fff",
+            background: (theme) => theme.palette.blue,
+            boxShadow: "0px 10px 10px rgba(221, 114, 133, 0.2)",
+            marginBottom: 20,
+            transition: "transform 0.3s ease-in-out",
+            ":hover": {
+              transform: "scale(1.1)",
+            },
           }}
         >
-          <Typography variant="caption" color="initial">
-            Questions, Comments, Feedback?{" "}
-            <Tooltip title="Feedback Form">
-              <a href="https://forms.gle/Fn42MnUpShvWze2L7">Click here.</a>
-            </Tooltip>
-          </Typography>
-        </Box>
-      </Container>
-    </Paper>
+          <BookmarkIcon />
+        </IconButton>
+      </Tooltip>
+
+      <Tooltip title="Flashcards">
+        <IconButton
+          to="/flashcards"
+          component={Link}
+          sx={{
+            borderRadius: 2,
+            p: 2,
+            color: "#fff",
+            background: (theme) => theme.palette.blueAlternative,
+            boxShadow: "0px 10px 10px rgba(221, 114, 133, 0.2)",
+            marginBottom: 20,
+            transition: "transform 0.3s ease-in-out",
+            ":hover": {
+              transform: "scale(1.1)",
+            },
+          }}
+        >
+          <StyleIcon />
+        </IconButton>
+      </Tooltip>
+    </Box>
   );
-}
+};
 
 const Home = () => {
   const [word, setWord] = useState("");
-  const [switchState, setSwitchState] = useState("Roots");
   const theme = useTheme();
   const history = useHistory();
 
-  // const handleSwitchChange = (event) => {
-  //   setSwitchState(event.target.checked ? "Root" : "Noun");
+  // const showTransliterations = () => {
+  //   Swal.fire({
+  //     title: "Transliterations",
+  //     html: "<img src='../../../public/assets/transliterations.jpeg' style='width:150px;'>",
+  //   });
   // };
 
-  // --- this is all the code for the typing animation ---
-
-  const passedPlaceholder = "Search for a root like ";
-
-  const rootsToType = [
-    "كتب",
-    "ktb",
-    "فعل",
-    "fel",
-    "نصر",
-    "nSr",
-    "ثلج",
-    "vlj",
-    "زلزل",
-    "zlzl",
-    "ظلم",
-    "Zlm",
-  ];
-
-  const [rootToTypeIndex, setRootToTypeIndex] = useState(0);
-  const [ticksSpentAtIndex, setTicksSpentAtIndex] = useState(0);
-
-  const [placeholder, setPlaceholder] = useState(passedPlaceholder.slice(0, 0));
-  const [placeholderIndex, setPlaceholderIndex] = useState(0);
-
-  // defines number of timer intervals to spend on the completed word
-  const TICKS_ON_COMPLETED_WORD = 3;
-
-  useEffect(() => {
-    const intr = setInterval(() => {
-      setPlaceholder(
-        passedPlaceholder +
-          rootsToType[rootToTypeIndex].slice(0, placeholderIndex)
-      );
-      if (placeholderIndex + 1 > rootsToType[rootToTypeIndex].length) {
-        if (ticksSpentAtIndex < TICKS_ON_COMPLETED_WORD) {
-          setTicksSpentAtIndex(ticksSpentAtIndex + 1);
-        } else {
-          setPlaceholderIndex(0);
-          setTicksSpentAtIndex(0);
-
-          if (rootToTypeIndex >= rootsToType.length - 1) {
-            // reached last root, loop around
-            setRootToTypeIndex(0);
-          } else {
-            setRootToTypeIndex(rootToTypeIndex + 1);
-          }
-        }
-      } else {
-        setPlaceholderIndex(placeholderIndex + 1);
-      }
-    }, 200);
-    return () => {
-      clearInterval(intr);
-    };
-  });
-
-  const showTransliterations = () => {
-    Swal.fire({
-      title: "Transliterations",
-      html: "<img src='../../../public/assets/transliterations.jpeg' style='width:150px;'>",
-    });
-  };
+  const placeholder = TypingAnimation();
 
   const handleSubmit = (event) => {
     event.preventDefault();
@@ -298,23 +246,7 @@ const Home = () => {
         <Grid item>Root</Grid>
       </Grid> */}
 
-      <Tooltip title="Bookmarks">
-        <IconButton
-          to="/bookmarks"
-          component={Link}
-          sx={{
-            borderRadius: 2,
-            p: 2,
-            color: "#fff",
-            background: (theme) => theme.palette.pink,
-            boxShadow: "0px 10px 10px rgba(221, 114, 133, 0.2)",
-            marginBottom: 20,
-          }}
-        >
-          <BookmarkIcon />
-        </IconButton>
-      </Tooltip>
-      {/* <GuestFooter /> */}
+      <ButtonsBox />
     </Box>
   );
 };

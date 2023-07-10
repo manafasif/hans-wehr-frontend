@@ -7,6 +7,7 @@ import Home from "./components/Home";
 import Bookmarks from "./components/Bookmarks";
 import Definition from "./components/Definition";
 import { Analytics } from "@vercel/analytics/react";
+import Flashcards from "./components/Flashcards";
 
 const App = () => {
   const [bookmarks, setBookmarks] = useState(
@@ -48,6 +49,9 @@ const App = () => {
               </Route>
               <Route path="/bookmarks">
                 <Bookmarks bookmarks={bookmarks} />
+              </Route>
+              <Route path="/flashcards">
+                <Flashcards flashcards={bookmarks} />
               </Route>
               <Route path="/search/:word">
                 <Definition
