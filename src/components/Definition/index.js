@@ -1,4 +1,10 @@
-import { useState, useEffect, Fragment } from "react";
+import {
+  useState,
+  useEffect,
+  Fragment,
+  createContext,
+  useContext,
+} from "react";
 import {
   Stack,
   Typography,
@@ -145,7 +151,16 @@ const ReportErrorDialog = ({ open, handleClose, word, errorType }) => {
   );
 };
 
-const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
+const FlashcardContext = createContext();
+
+const Definition = ({
+  bookmarks,
+  addBookmark,
+  removeBookmark,
+  addFlashcard,
+  removeFlashcard,
+  flashcards,
+}) => {
   const [searchInput, setSearchInput] = useState("");
 
   // handle submission of the search bar
@@ -171,24 +186,15 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
 
   const { word } = useParams();
   const history = useHistory();
-  // const [definitions, setDefinitions] = useState([]);
-  // const [nouns, setNouns] = useState([]);
   const [rootInfo, setRootInfo] = useState({});
   const [exist, setExist] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [successfullyConnected, setSuccessfullyConnected] = useState(false);
   const [error, setError] = useState(null);
-  // const [audio, setAudio] = useState(null);
 
   const [reportErrorOpen, setReportErrorOpen] = useState(false);
 
   const isBookmarked = Object.keys(bookmarks).includes(word);
-
-  // const DottedDivider = styled(Divider)({
-  //   border: 0,
-  //   borderTop: "1px dotted #ccc",
-  //   margin: "24px 0",
-  // });
 
   const TopBarEndAdornment = () => {
     return (
@@ -469,7 +475,9 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
   }
 
   return (
-    <>
+    <FlashcardContext.Provider
+      value={{ addFlashcard, removeFlashcard, flashcards }}
+    >
       <Stack direction="row" justifyContent="space-between">
         <IconButton
           onClick={() => {
@@ -523,119 +531,73 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
           </IconButton>
         </Tooltip>
       </Stack>
-
       {/* <TopBar /> */}
-
       <AllRootDefinitions />
-
-      {/* 
-      <Fragment key={123}>
-        <Divider sx={{ display: "block", my: 3 }} />
-        <b>Definition</b>
-        {exist &&
-          Object.keys(definitions).forEach((form) => {
-            const formNumber = formToInt[form];
-            return (
-              <Box
-                key={Math.random()}
-                sx={{
-                  boxShadow: "0px 10px 25px rgba(0, 0, 0, 0.05)",
-                  backgroundColor: "#fff",
-                  p: 2,
-                  borderRadius: 2,
-                  mt: 3,
-                }}
-              >
-                <Typography
-                  sx={{ textTransform: "capitalize" }}
-                  color="GrayText"
-                  variant="subtitle1"
-                >
-                  {form}
-                </Typography>
-                <Typography
-                  sx={{ my: 1 }}
-                  variant="body2"
-                  color="GrayText"
-                  key={definitions[form]}
-                >
-                  { {meaning.definitions.length > 1 && `${idx + 1}. `}{" "}}
-                  {definitions[form]}
-                </Typography>
-              </Box>
-            );
-            console.log("Form: " + form + " Def: " + definitions[form]);
-          })}
-      </Fragment> */}
-
-      {/* {definitions.map((def, idx) => (
-        <Fragment key={idx}>
-          <Divider sx={{ display: idx === 0 ? "none" : "block", my: 3 }} />
-          {def.meanings.map((meaning) => (
-            <Box
-              key={Math.random()}
-              sx={{
-                boxShadow: "0px 10px 25px rgba(0, 0, 0, 0.05)",
-                backgroundColor: "#fff",
-                p: 2,
-                borderRadius: 2,
-                mt: 3,
-              }}
-            >
-              <Typography
-                sx={{ textTransform: "capitalize" }}
-                color="GrayText"
-                variant="subtitle1"
-              >
-                {meaning.partOfSpeech}
-              </Typography>
-              {meaning.definitions.map((definition, idx) => (
-                <Typography
-                  sx={{ my: 1 }}
-                  variant="body2"
-                  color="GrayText"
-                  key={definition.definition}
-                >
-                  {meaning.definitions.length > 1 && `${idx + 1}. `}{" "}
-                  {definition.definition}
-                </Typography>
-              ))}
-            </Box>
-          ))}
-        </Fragment>
-      ))} */}
-    </>
+    </FlashcardContext.Provider>
   );
 };
 
-const CardButtons = ({ shortNotifText, textToCopy }) => {
-  const [copied, setCopied] = useState(false);
+const CardButtons = ({
+  shortNotifText,
+  textToCopy,
+  word,
+  form,
+  definition,
+}) => {
+  // pull the flashcard functions from the context
+  const { addFlashcard, removeFlashcard, flashcards } =
+    useContext(FlashcardContext);
+
+  // state used to manage if this card has been added to flashcards
   const [addedToFlashcards, setAddedToFlashcards] = useState(false);
 
+  // states used to manage push animation of button
+  const [flashcardButtonPressed, setFlashcardButtonPressed] = useState(false);
+  const [copyButtonPressed, setCopyButtonPressed] = useState(false);
+
   const handleCopy = () => {
-    setCopied(true);
+    setCopyButtonPressed(true);
     toastSuccess(`Successfully Copied ${shortNotifText} to Clipboard`);
-    setTimeout(() => {
-      setCopied(false);
-    }, 1000);
+    // setTimeout(() => {
+    //   setCopyButtonPressed(false);
+    // }, 1000);
   };
 
   const buttonStyles = {
     transition: "opacity 0.5s ease",
-    opacity: copied ? 0 : 1,
+    opacity: copyButtonPressed ? 0.1 : 1,
   };
 
   const handleAddToFlashcards = () => {
-    setAddedToFlashcards(true);
-    toastSuccess(`Successfully Added ${shortNotifText} to Flashcards`);
-    setTimeout(() => {
+    if (addedToFlashcards) {
       setAddedToFlashcards(false);
+      removeFlashcard(word, form);
+      toastSuccess(`Successfully Removed ${shortNotifText} From Flashcards`);
+    } else {
+      setAddedToFlashcards(true);
+      addFlashcard(word, form, definition);
+      toastSuccess(`Successfully Added ${shortNotifText} to Flashcards`);
+    }
+    // console.log("Added to flashcards", addedToFlashcards);
+    // button animation
+    setFlashcardButtonPressed(true);
+    setTimeout(() => {
+      setFlashcardButtonPressed(false);
     }, 1000);
   };
 
+  useEffect(() => {
+    const key = form ? JSON.stringify([word, form]) : JSON.stringify([word]);
+    setAddedToFlashcards(key in flashcards);
+  }, [flashcards]);
+
+  useEffect(() => {
+    console.log("Added to flashcards", addedToFlashcards);
+  }, [addedToFlashcards]);
+
   const flashCardButtonStyles = {
     transition: "opacity 0.5s ease",
-    opacity: addedToFlashcards ? 0 : 1,
+    opacity: flashcardButtonPressed ? 0.1 : 1,
   };
 
   return (
@@ -654,10 +616,10 @@ const CardButtons = ({ shortNotifText, textToCopy }) => {
           size="small"
           onClick={handleAddToFlashcards}
           style={flashCardButtonStyles}
-          disabled={addedToFlashcards}
+          disabled={flashcardButtonPressed}
           sx={{
             p: 1,
-            color: "gray",
+            color: addedToFlashcards ? "green" : "gray",
             "& svg": {
               fontSize: 14,
             },
@@ -672,7 +634,7 @@ const CardButtons = ({ shortNotifText, textToCopy }) => {
           <IconButton
             size="small"
             style={buttonStyles}
-            disabled={copied}
+            disabled={copyButtonPressed}
             sx={{
               zIndex: 1,
               color: "gray",
@@ -691,35 +653,7 @@ const CardButtons = ({ shortNotifText, textToCopy }) => {
 
 // renders a single form for the root definition
 const DefinitionCard = ({ formEntry, i, countString }) => {
-  // const [copied, setCopied] = useState(false);
-  // const [addedToFlashcards, setAddedToFlashcards] = useState(false);
-
-  // const handleCopy = () => {
-  //   setCopied(true);
-  //   setTimeout(() => {
-  //     setCopied(false);
-  //   }, 1000);
-  // };
-
-  // const buttonStyles = {
-  //   transition: "opacity 0.5s ease",
-  //   opacity: copied ? 0 : 1,
-  // };
-
-  // const handleAddToFlashcards = () => {
-  //   setAddedToFlashcards(true);
-  //   setTimeout(() => {
-  //     setAddedToFlashcards(false);
-  //   }, 1000);
-  // };
-
-  // const flashCardButtonStyles = {
-  //   transition: "opacity 0.5s ease",
-  //   opacity: addedToFlashcards ? 0 : 1,
-  // };
-
   return (
-    // <Tooltip title={`Verb Form ${form}`}>
     <Box
       key={`FormBox-${i}-${countString}`}
       sx={{
@@ -738,90 +672,10 @@ const DefinitionCard = ({ formEntry, i, countString }) => {
         textToCopy={`${formEntry.form} - ${formEntry.text}\n${stripHTMLTags(
           formEntry.translation.text
         )}`}
+        word={formEntry.text}
+        form={formEntry.form}
+        definition={formEntry.translation.text}
       ></CardButtons>
-
-      {/* <Box
-        sx={{
-          position: "absolute",
-          bottom: 0,
-          right: 0,
-          p: 0,
-          zIndex: 1,
-        }}
-      > */}
-      {/* button to add to flashcards collection */}
-      {/* <Tooltip title="Add to Flashcards">
-          <IconButton
-            size="small"
-            onClick={handleAddToFlashcards}
-            style={flashCardButtonStyles}
-            disabled={addedToFlashcards}
-            sx={{
-              p: 1,
-              color: "gray",
-              "& svg": {
-                fontSize: 14,
-              },
-            }}
-          >
-            <StyleOutlinedIcon />
-          </IconButton>
-        </Tooltip>
-
-        <CopyToClipboard
-          text={`${formEntry.form} - ${formEntry.text}\n${stripHTMLTags(
-            formEntry.translation.text
-          )}`}
-          onCopy={handleCopy}
-          key={`CopyButton-${i}-${countString}`}
-        >
-          <Tooltip title="Copy to Clipboard">
-            <IconButton
-              size="small"
-              onClick={handleCopy}
-              style={buttonStyles}
-              disabled={copied}
-              sx={{
-                zIndex: 1,
-                color: "gray",
-                "& svg": {
-                  fontSize: 14,
-                },
-              }}
-            >
-              <CopyIcon />
-            </IconButton>
-          </Tooltip>
-        </CopyToClipboard>
-      </Box> */}
-
-      {/* <CopyToClipboard
-        text={`${formEntry.form} - ${formEntry.text}\n${stripHTMLTags(
-          formEntry.translation.text
-        )}`}
-        onCopy={handleCopy}
-        key={`CopyButton-${i}-${countString}`}
-      >
-        <IconButton
-          size="small"
-          onClick={handleCopy}
-          style={buttonStyles}
-          disabled={copied}
-          sx={{
-            position: "absolute",
-            bottom: 0,
-            right: 0,
-            p: 1,
-            zIndex: 1,
-            color: "gray",
-            "& svg": {
-              fontSize: 14,
-            },
-          }}
-        >
-          <CopyIcon />
-        </IconButton>
-      </CopyToClipboard> */}
 
       <Typography
         sx={{ textTransform: "capitalize" }}
@@ -849,26 +703,11 @@ const DefinitionCard = ({ formEntry, i, countString }) => {
         {/* { {meaning.definitions.length > 1 && `${idx + 1}. `}{" "}} */}
       </Typography>
     </Box>
-    // </Tooltip>
   );
 };
 
 // renders a single card for a noun
 const NounCard = ({ nounEntry, i, countString }) => {
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = () => {
-    setCopied(true);
-    setTimeout(() => {
-      setCopied(false);
-    }, 1000);
-  };
-
-  const buttonStyles = {
-    transition: "opacity 0.5s ease",
-    opacity: copied ? 0 : 1,
-  };
-
   return (
     <Box
       key={`NounBox-${i}-${countString}`}
@@ -892,36 +731,10 @@ const NounCard = ({ nounEntry, i, countString }) => {
             ? `pl. ${nounEntry["plural"]["text"]}`
             : ""
         } \n${stripHTMLTags(nounEntry["translation"]["text"])}`}
+        word={nounEntry.text}
+        definition={nounEntry.translation.text}
       />
-      {/* <CopyToClipboard
-        text={`${nounEntry["text"]} ${
-          nounEntry["plural"]["text"]
-            ? `pl. ${nounEntry["plural"]["text"]}`
-            : ""
-        } \n${stripHTMLTags(nounEntry["translation"]["text"])}`}
-        onCopy={handleCopy}
-        // key={`NounCopyButton-${i}-${countString}`}
-      >
-        <IconButton
-          size="small"
-          onClick={handleCopy}
-          style={buttonStyles}
-          disabled={copied}
-          sx={{
-            position: "absolute",
-            bottom: 0,
-            right: 0,
-            p: 1,
-            zIndex: 1,
-            color: "gray",
-            "& svg": {
-              fontSize: 14,
-            },
-          }}
-        >
-          <CopyIcon />
-        </IconButton>
-      </CopyToClipboard> */}
+
       <Typography color="GrayText" variant="subtitle1">
         {`${nounEntry["text"]} ${
           nounEntry["plural"]["text"]

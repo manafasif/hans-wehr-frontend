@@ -14,9 +14,14 @@ const App = () => {
     JSON.parse(localStorage.getItem("bookmarks")) || {}
   );
 
+  const [flashcards, setFlashcards] = useState(
+    JSON.parse(localStorage.getItem("flashcards")) || {}
+  );
+
   useEffect(() => {
     localStorage.setItem("bookmarks", JSON.stringify(bookmarks));
-  }, [bookmarks]);
+    localStorage.setItem("flashcards", JSON.stringify(flashcards));
+  }, [bookmarks, flashcards]);
 
   const addBookmark = (word, definitions) =>
     setBookmarks((oldBookmarks) => ({
@@ -30,6 +35,26 @@ const App = () => {
       delete temp[word];
       return temp;
     });
+
+  const addFlashcard = (word, form, definition) => {
+    const key = form ? JSON.stringify([word, form]) : JSON.stringify([word]);
+    console.log(key, flashcards);
+    setFlashcards((oldFlashcards) => ({
+      ...oldFlashcards,
+      [key]: definition,
+    }));
+  };
+
+  const removeFlashcard = (word, form) => {
+    console.log(flashcards);
+
+    const key = form ? JSON.stringify([word, form]) : JSON.stringify([word]);
+    setFlashcards((oldFlashcards) => {
+      const temp = { ...oldFlashcards };
+      delete temp[key];
+      return temp;
+    });
+  };
 
   console.log(process.env.REACT_APP_LOCAL === "1");
 
@@ -51,13 +76,19 @@ const App = () => {
                 <Bookmarks bookmarks={bookmarks} />
               </Route>
               <Route path="/flashcards">
-                <Flashcards flashcards={bookmarks} />
+                <Flashcards
+                  flashcards={bookmarks}
+                  removeFlashcard={removeFlashcard}
+                />
               </Route>
               <Route path="/search/:word">
                 <Definition
                   bookmarks={bookmarks}
                   addBookmark={addBookmark}
                   removeBookmark={removeBookmark}
+                  addFlashcard={addFlashcard}
+                  removeFlashcard={removeFlashcard}
+                  flashcards={flashcards}
                 />
               </Route>
             </Router>

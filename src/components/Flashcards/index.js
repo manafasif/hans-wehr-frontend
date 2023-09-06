@@ -5,61 +5,55 @@ import { Button, Grid } from "@mui/material";
 import { Card, CardContent } from "@mui/material";
 import { useState, useEffect } from "react";
 
-// const Flashcards = ({ flashcards }) => {
-//   return (
-//     <>
-//       <Stack sx={{ mb: 2 }} direction="row" alignItems="center">
-//         <IconButton to="/" component={Link} sx={{ color: "black", mr: 1 }}>
-//           <BackIcon />
-//         </IconButton>
-//         <Typography variant="h6">Flashcards</Typography>
-//       </Stack>
-//       {!!Object.keys(flashcards).length ? (
-//         Object.keys(flashcards).map((b) => (
-//           <Box
-//             key={b}
-//             to={`/search/${b}`}
-//             component={Link}
-//             sx={{
-//               p: 2,
-//               cursor: "pointer",
-//               backgroundColor: "white",
-//               borderRadius: 1,
-//               textTransform: "capitalize",
-//               mb: 2,
-//               fontWeight: 800,
-//               display: "block",
-//               color: "black",
-//               textDecoration: "none",
-//             }}
-//           >
-//             {b}
-//           </Box>
-//         ))
-//       ) : (
-//         <Typography sx={{ mt: 5 }} align="center">
-//           No Bookmarks
-//         </Typography>
-//       )}
-//     </>
-//   );
-// };
-
-function Flashcard({ flashcard }) {
+function Flashcard({ flashcard, index }) {
   const [isFlipped, setIsFlipped] = useState(false);
 
   const handleFlip = () => {
-    setIsFlipped(!isFlipped);
+    setIsFlipped((current) => !current);
   };
 
   return (
-    <Card onClick={handleFlip}>
-      <CardContent>
-        <Typography variant="h5" component="div">
-          {isFlipped ? flashcard.answer : flashcard.question}
+    <Box
+      onClick={handleFlip}
+      key={index}
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "center",
+        alignItems: "center",
+        width: "100%",
+        boxShadow: "0px 10px 25px rgba(0, 0, 0, 0.05)",
+        backgroundColor: "#fff",
+        p: 2,
+        borderRadius: 2,
+        mt: 3,
+        transition: "height 0.6s",
+        ".front, .back": {
+          width: "100%",
+          transition: "opacity 0.6s",
+          opacity: isFlipped ? 0 : 1,
+        },
+        ".back": {
+          opacity: isFlipped ? 1 : 0,
+        },
+      }}
+    >
+      <div className="front">
+        <Typography color="GrayText" variant="subtitle1">
+          {flashcard.answer}
         </Typography>
-      </CardContent>
-    </Card>
+      </div>
+      <div className="back">
+        <Typography
+          sx={{ my: 1 }}
+          variant="body2"
+          color="GrayText"
+          dangerouslySetInnerHTML={{
+            __html: flashcard.question,
+          }}
+        ></Typography>
+      </div>
+    </Box>
   );
 }
 
@@ -78,31 +72,41 @@ function Flashcards() {
   };
 
   return (
-    <div>
-      <Button variant="contained" onClick={handleShuffle}>
+    <>
+      <Stack sx={{ mb: 2 }} direction="row" alignItems="center">
+        <IconButton to="/" component={Link} sx={{ color: "black", mr: 1 }}>
+          <BackIcon />
+        </IconButton>
+        <Typography variant="h6">Flashcards</Typography>
+      </Stack>
+      {/* <Button variant="contained" onClick={handleShuffle}>
         Shuffle
-      </Button>
-      <Grid container spacing={2}>
-        {!!Object.keys(flashcards).length ? (
-          Object.keys(flashcards).map((flashcard, index) => (
-            <Grid item key={index}>
-              <Flashcard
-                flashcard={{ answer: flashcard, question: flashcard }}
-              />
-            </Grid>
-          ))
-        ) : (
-          <Typography sx={{ mt: 5 }} align="center">
-            No Bookmarks
-          </Typography>
-        )}
-        {/* //   {flashcards.map((flashcard, index) => (
-        //     <Grid item key={index}>
-        //       <Flashcard flashcard={flashcard} />
-        //     </Grid>
-        //   ))} */}
-      </Grid>
-    </div>
+      </Button> */}
+      {!!Object.keys(flashcards).length ? (
+        <Grid container spacing={2}>
+          {Object.keys(flashcards).map((key, index) => {
+            const parsedKey = JSON.parse(key);
+            const flashcard = {
+              answer:
+                parsedKey.length === 1
+                  ? parsedKey[0]
+                  : `${parsedKey[1]} - ${parsedKey[0]}`,
+              question: flashcards[key],
+            };
+
+            return (
+              <Grid item xs={12} key={index}>
+                <Flashcard flashcard={flashcard} index={index} />
+              </Grid>
+            );
+          })}
+        </Grid>
+      ) : (
+        <Typography sx={{ mt: 5 }} align="center">
+          No Flashcards
+        </Typography>
+      )}
+    </>
   );
 }
 
