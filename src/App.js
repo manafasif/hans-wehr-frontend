@@ -36,27 +36,69 @@ const App = () => {
       return temp;
     });
 
-  const addFlashcard = (word, form, definition) => {
-    const key = form ? JSON.stringify([word, form]) : JSON.stringify([word]);
-    console.log(key, flashcards);
+  const DEFAULT_COLLECTION = "default_collection";
+
+  const addCollection = (collectionName) => {
+    console.log("Added new collection: ", collectionName);
     setFlashcards((oldFlashcards) => ({
       ...oldFlashcards,
-      [key]: definition,
+      [collectionName]: [],
     }));
   };
 
-  const removeFlashcard = (word, form) => {
-    console.log(flashcards);
+  const addFlashcard = (
+    word,
+    form,
+    definition,
+    root,
+    wordID,
+    selectedCollection = DEFAULT_COLLECTION
+  ) => {
+    const parsedWord = form
+      ? JSON.stringify([word, form])
+      : JSON.stringify([word]);
+    const newFlashcards = { ...flashcards };
+    const newFlashcard = {
+      word: parsedWord,
+      wordID: wordID,
+      root: root,
+      definition: definition,
+    };
+    console.log(
+      "newflashcards selectedcollection:",
+      newFlashcards[selectedCollection]
+    );
+    newFlashcards[selectedCollection].push(newFlashcard);
+    console.log(parsedWord, newFlashcard, newFlashcards);
 
-    const key = form ? JSON.stringify([word, form]) : JSON.stringify([word]);
-    setFlashcards((oldFlashcards) => {
-      const temp = { ...oldFlashcards };
-      delete temp[key];
-      return temp;
-    });
+    setFlashcards(newFlashcards);
+    // setFlashcards((oldFlashcards) => ({
+    //   ...oldFlashcards,
+    //   [key]: definition,
+    // }));
+  };
+
+  const removeFlashcard = (wordID, selectedCollection = DEFAULT_COLLECTION) => {
+    // console.log(flashcards);
+
+    // const parsedWord = form ? JSON.stringify([word, form]) : JSON.stringify([word]);
+    const newFlashcards = { ...flashcards };
+
+    // TODO: implement logic to find the matching ID and remove it and update the flashcards
   };
 
   console.log(process.env.REACT_APP_LOCAL === "1");
+
+  const CURRENT_FLASHCARDS_VERSION = "1.1";
+  const flashcards_version = localStorage.getItem("flashcards_version");
+  if (
+    !flashcards_version ||
+    flashcards_version !== CURRENT_FLASHCARDS_VERSION
+  ) {
+    console.log("wrong flashcard version");
+
+    // TODO: implement logic to update flashcard version
+  }
 
   return (
     <>

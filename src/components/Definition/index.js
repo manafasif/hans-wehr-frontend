@@ -44,6 +44,7 @@ import { stripHTMLTags } from "../../utils/utils";
 
 import { logger } from "../../utils/logger";
 import { toastSuccess } from "../../utils/utils";
+import LibraryAddOutlinedIcon from "@mui/icons-material/LibraryAddOutlined";
 
 import {
   Dialog,
@@ -54,7 +55,12 @@ import {
   TextField,
 } from "@mui/material";
 
+import Popover from "@mui/material/Popover";
+
 import ReportProblemIcon from "@mui/icons-material/ReportProblem";
+
+import MenuList from "@mui/material/MenuList";
+import MenuItem from "@mui/material/MenuItem";
 
 const AlignCenterBox = styled(Box)(({ theme }) => ({
   ...theme.mixins.alignInTheCenter,
@@ -68,7 +74,7 @@ var API_URL = "https://api.hanswehr.com";
 
 // Check if 'LOCAL' variable is set to '1', and if so, update 'API_URL' to local URL
 if (LOCAL === "1") {
-  API_URL = "http://localhost:8080";
+  API_URL = "http://localhost:80";
 }
 
 const CURRENT_RESPONSE_VERS = "1.0";
@@ -159,6 +165,7 @@ const Definition = ({
   removeBookmark,
   addFlashcard,
   removeFlashcard,
+  addCollection,
   flashcards,
 }) => {
   const [searchInput, setSearchInput] = useState("");
@@ -230,42 +237,6 @@ const Definition = ({
         >
           <BackIcon sx={{ color: "black", borderRadius: 0 }} />
         </IconButton>
-        {/* <form onSubmit={handleInputSubmit} spacing={0}>
-        <form
-            <FilledInput
-              value={searchInput}
-              onChange={(event) => setSearchInput(event.target.value)}
-              disableUnderline
-              placeholder="Search for a root"
-              sx={{
-                backgroundColor: "white",
-                borderRadius: 2,
-                boxShadow: "0px 10px 25px rgba(0, 0, 0, 0.05)",
-                "& .MuiFilledInput-input": {
-                  p: 2,
-                },
-              }}
-              startAdornment={<SearchIcon color="disabled" />}
-              endAdornment={
-                <Tooltip title="Search">
-                  <InputAdornment position="end">
-                    <ArrowForwardIcon
-                      aria-label="toggle password visibility"
-                      onClick={handleInputSubmit}
-                      edge="end"
-                      transition="background-color 0.2s ease-in-out"
-                      sx={{
-                        "&:hover": {
-                          color: "black",
-                          backgroundColor: "#BABABA",
-                          borderRadius: "50%",
-                          transition: "background-color 0.2s ease-in-out",
-                        },
-                      }}
-                    ></ArrowForwardIcon>
-                  </InputAdornment>
-                </Tooltip>
-              } */}
 
         <Box sx={{ width: "360px" }}>
           <form onSubmit={handleInputSubmit} spacing={0}>
@@ -325,13 +296,6 @@ const Definition = ({
     });
 
     setRootInfo(newRootInfo);
-    // setDefinitions(data["definition"]);
-    // setNouns(data["nouns"]);
-    // console.log("New def:" + JSON.stringify(definitions));
-    // const phonetics = data[0].phonetics;
-    // if (!phonetics.length) return;
-    // const url = phonetics[0].audio.replace("//ssl", "https://ssl");
-    // setAudio(new Audio(url));
   }
 
   // handles retrieving data from API and sets state accordingly
@@ -476,7 +440,7 @@ const Definition = ({
 
   return (
     <FlashcardContext.Provider
-      value={{ addFlashcard, removeFlashcard, flashcards }}
+      value={{ addFlashcard, removeFlashcard, flashcards, addCollection }}
     >
       <Stack direction="row" justifyContent="space-between">
         <IconButton
@@ -600,6 +564,46 @@ const CardButtons = ({
     opacity: flashcardButtonPressed ? 0.1 : 1,
   };
 
+  const [anchorEl, setAnchorEl] = useState(null);
+
+  const handleCollectionClick = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleCollectionClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleMenuItemClick = (collectionName) => {
+    // setSelectedCollection(collectionName);
+    handleCollectionClose();
+    // You can perform the action to add the flashcard to the selected collection here.
+  };
+
+  const handleAddNewCollection = () => {
+    handleCollectionClose();
+    Swal.fire({
+      title: "Add New Collection",
+      input: "text",
+      inputPlaceholder: "Enter collection name",
+      showCancelButton: true,
+      confirmButtonText: "Add",
+      cancelButtonText: "Cancel",
+      inputValidator: (value) => {
+        if (!value) {
+          return "Collection name cannot be empty";
+        }
+      },
+    }).then((result) => {
+      if (result.isConfirmed) {
+        const newCollectionName = result.value;
+        // You can perform the action to add the new collection here.
+        console.log("Adding new collection:", newCollectionName);
+        addCollection(newCollectionName);
+      }
+    });
+  };
+
   return (
     <Box
       sx={{
@@ -611,7 +615,8 @@ const CardButtons = ({
       }}
     >
       {/* button to add to flashcards collection */}
-      <Tooltip title="Add to Flashcards">
+
+      <Tooltip title="Quick Add">
         <IconButton
           size="small"
           onClick={handleAddToFlashcards}
@@ -625,9 +630,56 @@ const CardButtons = ({
             },
           }}
         >
+          <LibraryAddOutlinedIcon />
+        </IconButton>
+      </Tooltip>
+
+      <Tooltip title="Add to Collection">
+        <IconButton
+          size="small"
+          onClick={(event) => {
+            setAnchorEl(event.currentTarget);
+          }}
+          style={flashCardButtonStyles}
+          disabled={flashcardButtonPressed}
+          sx={{
+            p: 1,
+            color: addedToFlashcards ? "green" : "gray",
+            "& svg": {
+              fontSize: 14,
+            },
+          }}
+        >
           <StyleOutlinedIcon />
         </IconButton>
       </Tooltip>
+
+      <Popover
+        open={Boolean(anchorEl)}
+        anchorEl={anchorEl}
+        onClose={handleCollectionClose}
+        anchorOrigin={{
+          vertical: "bottom",
+          horizontal: "center",
+        }}
+        transformOrigin={{
+          vertical: "top",
+          horizontal: "center",
+        }}
+      >
+        <MenuList>
+          <MenuItem onClick={() => handleMenuItemClick("Collection 1")}>
+            Collection 1
+          </MenuItem>
+          <MenuItem onClick={() => handleMenuItemClick("Collection 2")}>
+            Collection 2
+          </MenuItem>
+          <MenuItem onClick={handleAddNewCollection}>
+            Add New Collection
+          </MenuItem>
+          {/* Add more menu items for each collection */}
+        </MenuList>
+      </Popover>
 
       <CopyToClipboard text={`${textToCopy}`} onCopy={handleCopy}>
         <Tooltip title="Copy to Clipboard">
@@ -841,30 +893,6 @@ const SingleDefinition = ({ word, definition, countString }) => {
             word={word}
           />
         </Stack>
-        {/* <Stack
-          direction="row"
-          alignItems="center"
-          justifyContent="space-between"
-          sx={{
-            mt: 3,
-            background:
-              "linear-gradient(90.17deg, #191E5D 0.14%, #161F75 98.58%)",
-            boxShadow: "0px 10px 20px rgba(19, 23, 71, 0.25)",
-            px: 4,
-            py: 5,
-            color: "white",
-            borderRadius: 2,
-          }}
-        >
-          <Typography sx={{ textTransform: "capitalize" }} variant="h5">
-            <sup>1</sup> {word}
-          </Typography>
-          {/* {
-            <IconButton>
-              <PlayIcon />
-            </IconButton>
-          } 
-        </Stack>  */}
       </Tooltip>
 
       <Fragment key={1}>
@@ -906,11 +934,6 @@ const SingleDefinition = ({ word, definition, countString }) => {
             >
               Nouns
             </Typography>
-            {/* {
-  <IconButton>
-    <PlayIcon />
-  </IconButton>
-} */}
           </Stack>
 
           {definition["nouns"] &&
