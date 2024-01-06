@@ -6,11 +6,12 @@ import {
 import { Link } from "react-router-dom";
 import { Button, Grid } from "@mui/material";
 import { Card, CardContent } from "@mui/material";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import { FlashcardArray } from "react-quizlet-flashcard";
 import TextField from "@mui/material/TextField";
 // import MUIRichTextEditor from "mui-rte";
 // import { createTheme, ThemeProvider } from "@mui/material/styles";
+import StyleOutlinedIcon from "@mui/icons-material/StyleOutlined";
 
 import { $createTextNode, $getRoot, $getSelection } from "lexical";
 import {
@@ -30,9 +31,14 @@ import { $insertNodes } from "lexical";
 import { $createParagraphNode } from "lexical";
 import PropTypes from "prop-types";
 import { useParams } from "react-router-dom/cjs/react-router-dom.min";
-import { Select, MenuItem } from "@material-ui/core";
+import { Select, MenuItem, Tooltip } from "@material-ui/core";
 import { memo } from "react";
-
+import { useAppContext } from "../../utils/AppContext";
+import CollectionList from "./CollectionList";
+import RemoveCircleOutlineOutlinedIcon from "@mui/icons-material/RemoveCircleOutlineOutlined";
+import { toastSuccess } from "../../utils/utils";
+import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
+import { useHistory } from "react-router-dom/cjs/react-router-dom.min";
 const testHTML =
   "(<i>katb</i>, كتبة‎ <i>kitba</i>, كتابة‎ <i>kitāba</i>) to write, pen, write down, put down in writing, note down, inscribe, enter, record, book, register (ھـ‎ s. th.); to compose, draw up, indite, draft (ھـ‎ s. th.); to bequeath, make over by will (ھـ‎ ل‎ s. th. to s. o.); to prescribe (ھـ‎ على‎ s. th. to s. o.); to foreordain, destine (ل‎ or ھـ‎ على‎ s. th. to s. o., of God); pass. <i>kutiba </i>to be rated, be foreordained, be destined (ل‎ to s. o.) ; ان‎ نفسه‎ على‎ كتب‎ to be firmly resolved to ..., make it one’s duty to ...; عنه‎ كتب‎ to write from s. o.’s dictation;كتابه‎ كتب‎ (<i>kitābahū</i>) to draw up the marriage contract for s. o., marry s. o. (على‎ to)";
 
@@ -154,24 +160,17 @@ const lexicalConfig = {
 };
 
 const Flashcards = () => {
-  const { collectionName } = useParams();
+  const {
+    flashcards,
+    setFlashcards,
+    removeFlashcard,
+    handleExportCSV,
+    getCollectionNames,
+  } = useAppContext();
 
-  // Set a default value of "default_collection" if collectionName is not provided
-  // const selectedCollection = collectionName
-  //   ? collectionName
-  //   : "default_collection";
-  const [selectedCollection, setSelectedCollection] =
-    useState("default_collection");
-
-  const [flashcards, setFlashcards] = useState(
-    localStorage.getItem("flashcards")
-      ? JSON.parse(localStorage.getItem("flashcards"))
-      : []
+  const [selectedCollection, setSelectedCollection] = useState(
+    getCollectionNames().length ? getCollectionNames()[0] : ""
   );
-
-  // useEffect(() => {
-  //   localStorage.setItem("flashcards", JSON.stringify(flashcards));
-  // }, [flashcards]);
 
   const [editMode, setEditMode] = useState(false);
 
@@ -210,6 +209,13 @@ const Flashcards = () => {
     setFlashcards(newFlashcards);
   };
 
+  // const flashCardButtonStyles = {
+  //   transition: "opacity 0.5s ease",
+  //   opacity: flashcardButtonPressed ? 0.1 : 1,
+  // };
+
+  const history = useHistory();
+
   return (
     <div
       style={{
@@ -217,7 +223,6 @@ const Flashcards = () => {
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
-        width: "500px",
         // backgroundColor: "pink",
       }}
     >
@@ -236,9 +241,17 @@ const Flashcards = () => {
         <Button onClick={toggleEditMode} color={editMode ? "success" : "error"}>
           Edit
         </Button>
+
+        <Button
+          onClick={() => {
+            handleExportCSV(selectedCollection);
+          }}
+        >
+          Export CSV
+        </Button>
       </Stack>
 
-      <Select
+      {/* <Select
         value={selectedCollection}
         onChange={(value) => {
           setSelectedCollection(value);
@@ -248,46 +261,64 @@ const Flashcards = () => {
         {Object.keys(flashcards).map((collectionName) => {
           return <MenuItem value={collectionName}>{collectionName}</MenuItem>;
         })}
-      </Select>
+      </Select> */}
 
-      <FlashcardArray
-        cards={Object.keys(flashcards[selectedCollection]).map((index) => {
-          const wordInfo = flashcards[selectedCollection][index];
-          // const parsedKey = JSON.parse(key);
-          console.log(flashcards[selectedCollection][index]);
+      {flashcards.hasOwnProperty(selectedCollection) ? (
+        <FlashcardArray
+          cards={Object.keys(flashcards[selectedCollection]).map((index) => {
+            const wordInfo = flashcards[selectedCollection][index];
+            // const parsedKey = JSON.parse(key);
+            // console.log(flashcards[selectedCollection][index]);
 
-          const frontHTML = <h2 style={{}}>{wordInfo.word}</h2>;
+            const frontHTML = <h2 style={{}}>{wordInfo.word}</h2>;
 
-          const backHTML = (
-            <p
-              dangerouslySetInnerHTML={{ __html: wordInfo.definition }}
-              style={{
-                padding: "15px",
-                height: "100%", // Ensure the container takes the full height
-                alignContent: "center",
-              }}
-            ></p>
-          );
+            const backHTML = (
+              <p
+                dangerouslySetInnerHTML={{ __html: wordInfo.definition }}
+                style={{
+                  padding: "15px",
+                  height: "100%", // Ensure the container takes the full height
+                  alignContent: "center",
+                }}
+              ></p>
+            );
 
-          return {
-            id: index,
-            frontHTML: frontHTML,
-            frontContentStyle: {
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-            },
-            backHTML: backHTML,
-            rearContentStyle: {
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-            },
-          };
-        })}
+            return {
+              id: index,
+              frontHTML: frontHTML,
+              frontCardStyle: {
+                overflowY: "auto",
+              },
+              backCardStyle: {
+                overflowY: "auto",
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+              },
+
+              frontContentStyle: {
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+              },
+              backHTML: backHTML,
+              backContentStyle: {
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+              },
+            };
+          })}
+        />
+      ) : null}
+
+      <CollectionList
+        selectedCollection={selectedCollection}
+        setSelectedCollection={setSelectedCollection}
       />
 
-      {!!Object.keys(flashcards[selectedCollection]).length ? (
+      {flashcards.hasOwnProperty(selectedCollection) &&
+      !!Object.keys(flashcards[selectedCollection]).length ? (
         <Grid container spacing={2} style={{ width: "100%" }}>
           {Object.keys(flashcards[selectedCollection]).map((index) => {
             const wordInfo = flashcards[selectedCollection][index];
@@ -384,6 +415,64 @@ const Flashcards = () => {
                     ) : (
                       <div style={{ flex: "1 0 75%" }}>
                         <StaticDescription htmlDefinition={definition} />
+
+                        {/* card buttons in bottom right */}
+                        <Box
+                          sx={{
+                            position: "absolute",
+                            bottom: 0,
+                            right: 0,
+                            p: 0,
+                            zIndex: 1,
+                          }}
+                        >
+                          {/* button to go to def page */}
+                          <Tooltip title="View Original Definition">
+                            <IconButton
+                              size="small"
+                              onClick={(event) => {
+                                history.push(`/search/${wordInfo.root}`);
+                              }}
+                              // style={flashCardButtonStyles}
+                              // disabled={flashcardButtonPressed}
+                              sx={{
+                                p: 1,
+                                color: "gray",
+                                "& svg": {
+                                  fontSize: 14,
+                                },
+                              }}
+                            >
+                              <SearchOutlinedIcon />
+                            </IconButton>
+                          </Tooltip>
+
+                          <Tooltip title="Delete Flashcard">
+                            <IconButton
+                              size="small"
+                              onClick={(event) => {
+                                removeFlashcard(
+                                  wordInfo.wordID,
+                                  selectedCollection
+                                );
+                                toastSuccess(
+                                  `Successfully deleted flashcard for ${word}`
+                                );
+                              }}
+                              // style={flashCardButtonStyles}
+                              // disabled={flashcardButtonPressed}
+                              sx={{
+                                p: 1,
+                                color: "gray",
+                                "& svg": {
+                                  fontSize: 14,
+                                },
+                              }}
+                            >
+                              <RemoveCircleOutlineOutlinedIcon />
+                            </IconButton>
+                          </Tooltip>
+                        </Box>
                       </div>
                     )}
                   </Box>

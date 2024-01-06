@@ -61,6 +61,7 @@ import ReportProblemIcon from "@mui/icons-material/ReportProblem";
 
 import MenuList from "@mui/material/MenuList";
 import MenuItem from "@mui/material/MenuItem";
+import { useAppContext } from "../../utils/AppContext";
 
 const AlignCenterBox = styled(Box)(({ theme }) => ({
   ...theme.mixins.alignInTheCenter,
@@ -159,16 +160,17 @@ const ReportErrorDialog = ({ open, handleClose, word, errorType }) => {
 
 const FlashcardContext = createContext();
 
-const Definition = ({
-  bookmarks,
-  addBookmark,
-  removeBookmark,
-  addFlashcard,
-  removeFlashcard,
-  addCollection,
-  flashcards,
-}) => {
+const Definition = ({}) => {
   const [searchInput, setSearchInput] = useState("");
+  const {
+    bookmarks,
+    addBookmark,
+    removeBookmark,
+    addFlashcard,
+    removeFlashcard,
+    addCollection,
+    flashcards,
+  } = useAppContext();
 
   // handle submission of the search bar
   const handleInputSubmit = (event) => {
@@ -440,7 +442,7 @@ const Definition = ({
 
   return (
     <FlashcardContext.Provider
-      value={{ addFlashcard, removeFlashcard, flashcards, addCollection }}
+      value={{ addFlashcard, removeFlashcard, flashcards }}
     >
       <Stack direction="row" justifyContent="space-between">
         <IconButton
@@ -507,10 +509,12 @@ const CardButtons = ({
   word,
   form,
   definition,
+  wordID,
+  root,
 }) => {
   // pull the flashcard functions from the context
-  const { addFlashcard, removeFlashcard, flashcards } =
-    useContext(FlashcardContext);
+  const { addFlashcard, getCollectionNames, addCollectionWithFlashcard } =
+    useAppContext();
 
   // state used to manage if this card has been added to flashcards
   const [addedToFlashcards, setAddedToFlashcards] = useState(false);
@@ -532,16 +536,22 @@ const CardButtons = ({
     opacity: copyButtonPressed ? 0.1 : 1,
   };
 
-  const handleAddToFlashcards = () => {
-    if (addedToFlashcards) {
-      setAddedToFlashcards(false);
-      removeFlashcard(word, form);
-      toastSuccess(`Successfully Removed ${shortNotifText} From Flashcards`);
+  const handleAddToFlashcards = (collection) => {
+    // if (addedToFlashcards) {
+    //   setAddedToFlashcards(false);
+    //   removeFlashcard(word, form);
+    //   toastSuccess(`Successfully Removed ${shortNotifText} From Flashcards`);
+    // } else {
+    //   setAddedToFlashcards(true);
+
+    let addedTo;
+    if (collection) {
+      addedTo = addFlashcard(word, form, definition, root, wordID, collection);
     } else {
-      setAddedToFlashcards(true);
-      addFlashcard(word, form, definition);
-      toastSuccess(`Successfully Added ${shortNotifText} to Flashcards`);
+      addedTo = addFlashcard(word, form, definition, root, wordID);
     }
+    toastSuccess(`Successfully Added ${shortNotifText} to ${addedTo}`);
+
     // console.log("Added to flashcards", addedToFlashcards);
     // button animation
     setFlashcardButtonPressed(true);
@@ -550,10 +560,11 @@ const CardButtons = ({
     }, 1000);
   };
 
-  useEffect(() => {
-    const key = form ? JSON.stringify([word, form]) : JSON.stringify([word]);
-    setAddedToFlashcards(key in flashcards);
-  }, [flashcards]);
+  // useEffect(() => {
+  //   const key = form ? JSON.stringify([word, form]) : JSON.stringify([word]);
+  //   // setAddedToFlashcards(key in flashcards);
+  //   // TODO: set this logic back up
+  // }, [flashcards]);
 
   useEffect(() => {
     console.log("Added to flashcards", addedToFlashcards);
@@ -576,8 +587,8 @@ const CardButtons = ({
 
   const handleMenuItemClick = (collectionName) => {
     // setSelectedCollection(collectionName);
+    handleAddToFlashcards(collectionName);
     handleCollectionClose();
-    // You can perform the action to add the flashcard to the selected collection here.
   };
 
   const handleAddNewCollection = () => {
@@ -599,7 +610,18 @@ const CardButtons = ({
         const newCollectionName = result.value;
         // You can perform the action to add the new collection here.
         console.log("Adding new collection:", newCollectionName);
-        addCollection(newCollectionName);
+        addCollectionWithFlashcard(
+          word,
+          form,
+          definition,
+          root,
+          wordID,
+          newCollectionName
+        );
+        toastSuccess(
+          `Successfully added ${shortNotifText} to new collection: ${newCollectionName}`
+        );
+        handleAddToFlashcards(newCollectionName);
       }
     });
   };
@@ -619,7 +641,13 @@ const CardButtons = ({
       <Tooltip title="Quick Add">
         <IconButton
           size="small"
-          onClick={handleAddToFlashcards}
+          onClick={() => {
+            if (getCollectionNames().length) {
+              handleAddToFlashcards();
+            } else {
+              handleAddNewCollection();
+            }
+          }}
           style={flashCardButtonStyles}
           disabled={flashcardButtonPressed}
           sx={{
@@ -668,16 +696,16 @@ const CardButtons = ({
         }}
       >
         <MenuList>
-          <MenuItem onClick={() => handleMenuItemClick("Collection 1")}>
-            Collection 1
-          </MenuItem>
-          <MenuItem onClick={() => handleMenuItemClick("Collection 2")}>
-            Collection 2
-          </MenuItem>
+          {getCollectionNames().map((collectionName) => {
+            return (
+              <MenuItem onClick={() => handleMenuItemClick(collectionName)}>
+                {collectionName}
+              </MenuItem>
+            );
+          })}
           <MenuItem onClick={handleAddNewCollection}>
             Add New Collection
           </MenuItem>
-          {/* Add more menu items for each collection */}
         </MenuList>
       </Popover>
 
@@ -704,7 +732,7 @@ const CardButtons = ({
 };
 
 // renders a single form for the root definition
-const DefinitionCard = ({ formEntry, i, countString }) => {
+const DefinitionCard = ({ formEntry, i, countString, root }) => {
   return (
     <Box
       key={`FormBox-${i}-${countString}`}
@@ -727,6 +755,8 @@ const DefinitionCard = ({ formEntry, i, countString }) => {
         word={formEntry.text}
         form={formEntry.form}
         definition={formEntry.translation.text}
+        wordID={formEntry.id}
+        root={root}
       ></CardButtons>
 
       <Typography
@@ -759,7 +789,7 @@ const DefinitionCard = ({ formEntry, i, countString }) => {
 };
 
 // renders a single card for a noun
-const NounCard = ({ nounEntry, i, countString }) => {
+const NounCard = ({ nounEntry, i, countString, root }) => {
   return (
     <Box
       key={`NounBox-${i}-${countString}`}
@@ -785,6 +815,8 @@ const NounCard = ({ nounEntry, i, countString }) => {
         } \n${stripHTMLTags(nounEntry["translation"]["text"])}`}
         word={nounEntry.text}
         definition={nounEntry.translation.text}
+        wordID={nounEntry.id}
+        root={root}
       />
 
       <Typography color="GrayText" variant="subtitle1">
@@ -904,6 +936,7 @@ const SingleDefinition = ({ word, definition, countString }) => {
             i={index}
             key={`DefinitionCard-${countString}-${index}`}
             countString={countString}
+            root={word}
           />
         ))}
       </Fragment>
@@ -943,6 +976,7 @@ const SingleDefinition = ({ word, definition, countString }) => {
                 i={i}
                 key={`NounCard-${countString}-${i}`}
                 countString={countString}
+                root={word}
               />
             ))}
         </Fragment>
