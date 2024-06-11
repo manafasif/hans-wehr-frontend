@@ -29,6 +29,7 @@ import Swal from "sweetalert2";
 // flashcards icon
 import StyleIcon from "@mui/icons-material/Style";
 import TypingAnimation from "./typingAnimation";
+import { useAppContext } from "../../utils/AppContext";
 const ButtonsBox = () => {
   return (
     <Box>
@@ -107,8 +108,42 @@ const Home = () => {
     const processedWord = processInputToArabic(trimmedWord);
     history.push(`/search/${processedWord}`);
   };
+
+  const { userData, handleLogout, handleLogin, handleRegister } =
+    useAppContext();
+
   return (
     <Box sx={{ ...theme.mixins.alignInTheCenter }}>
+      <Box
+        sx={{
+          position: "absolute",
+          top: "20px",
+          right: "20px",
+        }}
+      >
+        {userData ? null : (
+          <Button
+            onClick={handleRegister}
+            variant="contained"
+            sx={{
+              margin: "5px",
+            }}
+          >
+            Register
+          </Button>
+        )}
+
+        <Button
+          onClick={userData ? handleLogout : handleLogin}
+          variant="outlined"
+          sx={{
+            margin: "5px",
+          }}
+        >
+          {userData ? userData.username : "Login"}
+        </Button>
+      </Box>
+
       <Box
         sx={{
           display: "flex",
@@ -194,57 +229,6 @@ const Home = () => {
           View Transliterations
         </Typography>
       </Tooltip> */}
-
-      {/* <StyledEngineProvider injectFirst>
-        <Box sx={{ display: "flex" }}>
-          <Box className="mask-box">
-            <Box
-              className="mask"
-              style={{
-                transform: `translateX(${
-                  switchState === "Roots" ? 0 : "100px"
-                })`,
-              }}
-            />
-            <Button
-              disableRipple
-              variant="text"
-              sx={{ color: switchState === "Roots" ? "#ffffff" : "#1623AE" }}
-              onClick={() => setSwitchState("Roots")}
-            >
-              Roots
-            </Button>
-            <Button
-              disableRipple
-              variant="text"
-              sx={{ color: switchState === "Nouns" ? "#ffffff" : "#0D0579" }}
-              onClick={() => setSwitchState("Nouns")}
-            >
-              Nouns
-            </Button>
-          </Box>
-        </Box>
-      </StyledEngineProvider> */}
-
-      {/* <Grid
-        component="label"
-        container
-        alignItems="center"
-        spacing={1}
-        justifyContent="center"
-        marginTop={0}
-        marginBottom={2}
-      >
-        <Grid item>Noun</Grid>
-        <Grid item>
-          <Switch
-            checked={switchState === "Root"} // relevant state for your case
-            onChange={handleSwitchChange}
-            value="checked" // some value you need
-          />
-        </Grid>
-        <Grid item>Root</Grid>
-      </Grid> */}
 
       <ButtonsBox />
     </Box>

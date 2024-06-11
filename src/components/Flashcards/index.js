@@ -5,7 +5,7 @@ import {
 } from "@material-ui/icons";
 import { Link } from "react-router-dom";
 import { Button, Grid } from "@mui/material";
-import { Card, CardContent } from "@mui/material";
+import { Card, CardContent, Menu } from "@mui/material";
 import { useState, useEffect, useContext } from "react";
 import { FlashcardArray } from "react-quizlet-flashcard";
 import TextField from "@mui/material/TextField";
@@ -124,8 +124,8 @@ function LoadContentPlugin({ initialDefinition }) {
       // Once you have the DOM instance it's easy to generate LexicalNodes.
       const nodes = $generateNodesFromDOM(editor, dom);
 
-      console.log("Generated nodes:");
-      console.log(nodes);
+      // console.log("Generated nodes:");
+      // console.log(nodes);
 
       const paragraphNode = $createParagraphNode();
 
@@ -166,6 +166,10 @@ const Flashcards = () => {
     removeFlashcard,
     handleExportCSV,
     getCollectionNames,
+    refreshFlashcards,
+    userData,
+    updateDBFlashcards,
+    handleExportJSON,
   } = useAppContext();
 
   const [selectedCollection, setSelectedCollection] = useState(
@@ -176,13 +180,15 @@ const Flashcards = () => {
 
   const toggleEditMode = () => {
     setEditMode(!editMode);
-    console.log("Edited edit mode");
+    // console.log("Edited edit mode");
   };
 
+  const [edited, setEdited] = useState(false);
+
   useEffect(() => {
-    console.log("Edit mode changed");
-    console.log("New Flashcards: ", flashcards);
-    if (!editMode) {
+    // console.log("Edit mode changed");
+    // console.log("New Flashcards: ", flashcards);
+    if (edited && !editMode) {
       for (const index in flashcards[selectedCollection]) {
         if (flashcards[selectedCollection].hasOwnProperty(index)) {
           const card = flashcards[selectedCollection][index];
@@ -192,21 +198,34 @@ const Flashcards = () => {
           }
         }
       }
+      updateDBFlashcards(flashcards);
+    } else if (editMode) {
+      // set flag to show that it's been edited
+      setEdited(true);
     }
   }, [editMode]);
 
+  useEffect(() => {
+    console.log("refreshflashcards ran");
+    if (userData) {
+      refreshFlashcards();
+    }
+  }, []);
+
   const handleDefinitionChange = (index, newDef) => {
-    console.log("reciveded newDef", newDef, flashcards);
+    // console.log("reciveded newDef", newDef, flashcards);
     const newFlashcards = { ...flashcards };
-    console.log(newFlashcards, newFlashcards[selectedCollection]);
+    // console.log(newFlashcards, newFlashcards[selectedCollection]);
     newFlashcards[selectedCollection][index].definition = newDef;
     setFlashcards(newFlashcards);
+    // updateDBFlashcards(newFlashcards);
   };
 
   const handleWordChange = (index, newWord) => {
     const newFlashcards = [...flashcards];
     newFlashcards[selectedCollection][index].word = newWord;
     setFlashcards(newFlashcards);
+    // updateDBFlashcards(newFlashcards);
   };
 
   // const flashCardButtonStyles = {
@@ -215,6 +234,57 @@ const Flashcards = () => {
   // };
 
   const history = useHistory();
+
+  const [anchorEl, setAnchorEl] = useState(null);
+
+  const handleMenuOpen = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
+
+  const fileInputRef = useRef(null);
+
+  const handleImportJSON = () => {
+    // Trigger a click on the hidden file input
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+    handleMenuClose();
+  };
+
+  const handleFileInputChange = (event) => {
+    const file = event.target.files[0];
+
+    if (file) {
+      const reader = new FileReader();
+
+      reader.onload = (e) => {
+        try {
+          const jsonData = JSON.parse(e.target.result);
+          if (jsonData) {
+            setFlashcards(jsonData);
+            updateDBFlashcards(jsonData);
+            // Additional processing or updating state as needed
+            console.log(
+              "Flashcards imported successfully:",
+              jsonData.flashcards
+            );
+          } else {
+            console.error('Invalid JSON format: Missing "flashcards" key');
+          }
+        } catch (error) {
+          console.error("Error parsing JSON:", error);
+        }
+      };
+
+      reader.readAsText(file);
+      // Clear the file input value to allow re-uploading the same file
+      event.target.value = "";
+    }
+  };
 
   return (
     <div
@@ -239,29 +309,39 @@ const Flashcards = () => {
         </div>
 
         <Button onClick={toggleEditMode} color={editMode ? "success" : "error"}>
-          Edit
+          {/* Edit */}
+          {editMode ? "Save" : "Edit"}
         </Button>
 
-        <Button
+        {/* <Button
           onClick={() => {
             handleExportCSV(selectedCollection);
           }}
         >
           Export CSV
-        </Button>
-      </Stack>
+        </Button> */}
 
-      {/* <Select
-        value={selectedCollection}
-        onChange={(value) => {
-          setSelectedCollection(value);
-        }}
-        sx={{ minWidth: 150, margin: "20px" }}
-      >
-        {Object.keys(flashcards).map((collectionName) => {
-          return <MenuItem value={collectionName}>{collectionName}</MenuItem>;
-        })}
-      </Select> */}
+        <Button onClick={handleMenuOpen}>Export</Button>
+        <Menu
+          anchorEl={anchorEl}
+          open={Boolean(anchorEl)}
+          onClose={handleMenuClose}
+        >
+          <MenuItem onClick={() => handleExportCSV(selectedCollection)}>
+            Export CSV
+          </MenuItem>
+          <MenuItem onClick={handleExportJSON}>Export JSON</MenuItem>
+          <MenuItem onClick={(e) => handleImportJSON(e)}>Import JSON</MenuItem>
+        </Menu>
+        {/* Hidden file input */}
+        <input
+          type="file"
+          accept=".json"
+          ref={fileInputRef}
+          style={{ display: "none" }}
+          onChange={handleFileInputChange}
+        />
+      </Stack>
 
       {flashcards.hasOwnProperty(selectedCollection) ? (
         <FlashcardArray
@@ -322,7 +402,7 @@ const Flashcards = () => {
         <Grid container spacing={2} style={{ width: "100%" }}>
           {Object.keys(flashcards[selectedCollection]).map((index) => {
             const wordInfo = flashcards[selectedCollection][index];
-            console.log("Index: ", index, " Wordifo: ", wordInfo);
+            // console.log("Index: ", index, " Wordifo: ", wordInfo);
             // const parsedKey = JSON.parse(key);
             const word = wordInfo.word;
             const definition = wordInfo.definition;
@@ -395,12 +475,12 @@ const Flashcards = () => {
                               editor.update(() => {
                                 const newEditedHTMLDefinition =
                                   $generateHtmlFromNodes(editor, null);
-                                console.log("Editor state:");
-                                console.log(currentEditorState);
-                                console.log(
-                                  "\nEdited HTML: ",
-                                  newEditedHTMLDefinition
-                                );
+                                // console.log("Editor state:");
+                                // console.log(currentEditorState);
+                                // console.log(
+                                //   "\nEdited HTML: ",
+                                //   newEditedHTMLDefinition
+                                // );
                                 handleDefinitionChange(
                                   index,
                                   newEditedHTMLDefinition
@@ -491,56 +571,3 @@ const Flashcards = () => {
 };
 
 export default Flashcards;
-
-{
-  /*
-      <FlashcardArray
-        cards={Object.keys(flashcards[selectedCollection]).map(
-          (index, wordInfo) => {
-            // const parsedKey = JSON.parse(key);
-            console.log(flashcards[selectedCollection][index]);
-
-            // const frontHTML = (
-            //   <h2 style={{}}>
-            //     {parsedKey.length === 1
-            //       ? parsedKey[0]
-            //       : `${parsedKey[1]} - ${parsedKey[0]}`}
-            //   </h2>
-            // );
-
-            // const backHTML = (
-            //   <p
-            //     dangerouslySetInnerHTML={{ __html: flashcards[key] }}
-            //     style={{
-            //       padding: "15px",
-            //       height: "100%", // Ensure the container takes the full height
-            //       alignContent: "center",
-            //     }}
-            //   ></p>
-            // );
-
-            // return {
-            //   id: index,
-            //   frontHTML: frontHTML,
-            //   frontContentStyle: {
-            //     display: "flex",
-            //     justifyContent: "center",
-            //     alignItems: "center",
-            //   },
-            //   backHTML: backHTML,
-            //   rearContentStyle: {
-            //     display: "flex",
-            //     justifyContent: "center",
-            //     alignItems: "center",
-            //   },
-            // };
-          }
-        )}
-      />
-
-        */
-}
-
-{
-  /* <EditableDescription /> */
-}

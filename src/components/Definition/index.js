@@ -22,6 +22,7 @@ import {
   Bookmark as BookmarkedIcon,
   PlayArrow as PlayIcon,
   HomeOutlined as HomeIcon,
+  Remove,
 } from "@material-ui/icons";
 import { useParams, useHistory } from "react-router-dom";
 import axios from "axios";
@@ -45,6 +46,8 @@ import { stripHTMLTags } from "../../utils/utils";
 import { logger } from "../../utils/logger";
 import { toastSuccess } from "../../utils/utils";
 import LibraryAddOutlinedIcon from "@mui/icons-material/LibraryAddOutlined";
+import RemoveCircleOutlineOutlinedIcon from "@mui/icons-material/RemoveCircleOutlineOutlined";
+import AddCircleOutlineOutlinedIcon from "@mui/icons-material/AddCircleOutlineOutlined";
 
 import {
   Dialog,
@@ -75,7 +78,7 @@ var API_URL = "https://api.hanswehr.com";
 
 // Check if 'LOCAL' variable is set to '1', and if so, update 'API_URL' to local URL
 if (LOCAL === "1") {
-  API_URL = "http://localhost:80";
+  API_URL = "http://localhost:8080";
 }
 
 const CURRENT_RESPONSE_VERS = "1.0";
@@ -308,6 +311,8 @@ const Definition = ({}) => {
         const resp = await axios.get(API_URL + `/root?root=${word}`);
         updateState(resp.data["data"]);
 
+        console.log("Response: ", resp.data["data"]);
+
         setExist(resp.data["data"].length !== 0);
         setSuccessfullyConnected(true);
         setLoaded(true);
@@ -511,6 +516,8 @@ const CardButtons = ({
   definition,
   wordID,
   root,
+  displayShort,
+  setDisplayShort,
 }) => {
   // pull the flashcard functions from the context
   const { addFlashcard, getCollectionNames, addCollectionWithFlashcard } =
@@ -567,7 +574,7 @@ const CardButtons = ({
   // }, [flashcards]);
 
   useEffect(() => {
-    console.log("Added to flashcards", addedToFlashcards);
+    // console.log("Added to flashcards", addedToFlashcards);
   }, [addedToFlashcards]);
 
   const flashCardButtonStyles = {
@@ -609,7 +616,7 @@ const CardButtons = ({
       if (result.isConfirmed) {
         const newCollectionName = result.value;
         // You can perform the action to add the new collection here.
-        console.log("Adding new collection:", newCollectionName);
+        // console.log("Adding new collection:", newCollectionName);
         addCollectionWithFlashcard(
           word,
           form,
@@ -637,6 +644,30 @@ const CardButtons = ({
       }}
     >
       {/* button to add to flashcards collection */}
+
+      <Tooltip title={displayShort ? "Show Long Def" : "Show Short Def"}>
+        <IconButton
+          size="small"
+          onClick={(event) => {
+            setDisplayShort(!displayShort);
+          }}
+          style={flashCardButtonStyles}
+          // disabled={flashcardButtonPressed}
+          sx={{
+            p: 1,
+            color: displayShort ? "green" : "gray",
+            "& svg": {
+              fontSize: 14,
+            },
+          }}
+        >
+          {displayShort ? (
+            <AddCircleOutlineOutlinedIcon />
+          ) : (
+            <RemoveCircleOutlineOutlinedIcon />
+          )}
+        </IconButton>
+      </Tooltip>
 
       <Tooltip title="Quick Add">
         <IconButton
@@ -733,6 +764,8 @@ const CardButtons = ({
 
 // renders a single form for the root definition
 const DefinitionCard = ({ formEntry, i, countString, root }) => {
+  const [displayShort, setDisplayShort] = useState(false);
+
   return (
     <Box
       key={`FormBox-${i}-${countString}`}
@@ -754,9 +787,15 @@ const DefinitionCard = ({ formEntry, i, countString, root }) => {
         )}`}
         word={formEntry.text}
         form={formEntry.form}
-        definition={formEntry.translation.text}
+        definition={
+          displayShort
+            ? formEntry.translation.short
+            : formEntry.translation.text
+        }
         wordID={formEntry.id}
         root={root}
+        displayShort={displayShort}
+        setDisplayShort={setDisplayShort}
       ></CardButtons>
 
       <Typography
@@ -780,7 +819,11 @@ const DefinitionCard = ({ formEntry, i, countString, root }) => {
         variant="body2"
         color="GrayText"
         key={`FormEntry-${i}`}
-        dangerouslySetInnerHTML={{ __html: formEntry.translation.text }}
+        dangerouslySetInnerHTML={{
+          __html: displayShort
+            ? formEntry.translation.short
+            : formEntry.translation.text,
+        }}
       >
         {/* { {meaning.definitions.length > 1 && `${idx + 1}. `}{" "}} */}
       </Typography>
@@ -790,6 +833,15 @@ const DefinitionCard = ({ formEntry, i, countString, root }) => {
 
 // renders a single card for a noun
 const NounCard = ({ nounEntry, i, countString, root }) => {
+  const [displayShort, setDisplayShort] = useState(false);
+
+  let transliterations = nounEntry.transliteration
+    ? `${nounEntry.transliteration}`
+    : null;
+  if (transliterations && nounEntry.plural.transliteration) {
+    transliterations = `${transliterations} pl. ${nounEntry.plural.transliteration}`;
+  }
+
   return (
     <Box
       key={`NounBox-${i}-${countString}`}
@@ -814,9 +866,15 @@ const NounCard = ({ nounEntry, i, countString, root }) => {
             : ""
         } \n${stripHTMLTags(nounEntry["translation"]["text"])}`}
         word={nounEntry.text}
-        definition={nounEntry.translation.text}
+        definition={
+          displayShort
+            ? nounEntry.translation.short
+            : nounEntry.translation.text
+        }
         wordID={nounEntry.id}
         root={root}
+        displayShort={displayShort}
+        setDisplayShort={setDisplayShort}
       />
 
       <Typography color="GrayText" variant="subtitle1">
@@ -833,7 +891,8 @@ const NounCard = ({ nounEntry, i, countString, root }) => {
         fontWeight={550}
         key={`NounsEntry-${i}-${countString}`}
       >
-        {nounEntry.transliteration ? `${nounEntry.transliteration}` : null}
+        {transliterations}
+        {/* {nounEntry.transliteration ? `${nounEntry.transliteration}` : null} */}
       </Typography>
       <Typography
         sx={{ my: 1 }}
@@ -841,7 +900,9 @@ const NounCard = ({ nounEntry, i, countString, root }) => {
         color="GrayText"
         key={`NounsDef-${i}-${countString}`}
         dangerouslySetInnerHTML={{
-          __html: nounEntry["translation"]["text"],
+          __html: displayShort
+            ? nounEntry["translation"]["short"]
+            : nounEntry["translation"]["text"],
         }}
       ></Typography>
     </Box>
