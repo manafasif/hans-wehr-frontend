@@ -296,7 +296,7 @@ const Home = () => {
         </IconButton>
       </Tooltip>
 
-      <GuestFooter />
+      {/* <GuestFooter /> */}
     </Box>
   );
 };

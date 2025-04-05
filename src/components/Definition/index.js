@@ -122,7 +122,6 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
     const fetchDefinition = async () => {
       console.log("Useeffect Fired");
       try {
-        await initDictionaryDB(); // ✅ ensure DB is ready before using it
         const data = await retrieveAllWordsWithRoot(word);
 
         if (data.length > 0) {
