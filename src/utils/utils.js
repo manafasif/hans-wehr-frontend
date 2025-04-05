@@ -12,7 +12,7 @@ const Toast = Swal.mixin({
   },
 });
 
-const toastSuccess = (root) => {
+export const toastSuccess = (root) => {
   Toast.fire({
     icon: "success",
     title: "Success!",
@@ -20,7 +20,7 @@ const toastSuccess = (root) => {
   });
 };
 
-const toastError = (message) => {
+export const toastError = (message) => {
   Toast.fire({
     icon: "error",
     title: "Error!",
@@ -28,50 +28,144 @@ const toastError = (message) => {
   });
 };
 
-const noResultsAlert = (word, callback) => {};
+// export const noResultsAlert = (word, callback) => {};
 
-function processInputToArabic(str) {
-  str = str.replace(/v/g, "ث");
-  str = str.replace(/[gG]/g, "غ");
-  str = str.replace(/x/g, "خ");
-  str = str.replace(/\$/g, "ش");
-  str = str.replace(/\*/g, "ذ");
-  // Hmm, make the following case insensitive and assign different letters to different cases:
-  str = str.replace(/d/g, "د");
-  str = str.replace(/D/g, "ض");
-  str = str.replace(/z/g, "ز");
-  str = str.replace(/Z/g, "ظ");
-  str = str.replace(/s/g, "س");
-  str = str.replace(/S/g, "ص");
-  str = str.replace(/t/g, "ت");
-  str = str.replace(/T/g, "ط");
-  str = str.replace(/h/g, "ه");
-  str = str.replace(/H/g, "ح");
-  // Include chat arabic?
-  //str = str.replace(/[7]/g,"ح");
-  //str = str.replace(/[3]/g,"ع");
-  // Not much iktilaaf over these I guess:
-  str = str.replace(/[xX]/g, "خ");
-  str = str.replace(/[vV]/g, "ث");
-  str = str.replace(/[aA]/g, "ا");
-  str = str.replace(/[bB]/g, "ب");
-  str = str.replace(/[jJ]/g, "ج");
-  str = str.replace(/[rR]/g, "ر");
-  str = str.replace(/[eE]/g, "ع");
-  str = str.replace(/[fF]/g, "ف");
-  str = str.replace(/[qQ]/g, "ق");
-  str = str.replace(/[kK]/g, "ك");
-  str = str.replace(/[lL]/g, "ل");
-  str = str.replace(/[mM]/g, "م");
-  str = str.replace(/[nN]/g, "ن");
-  str = str.replace(/[wW]/g, "و");
-  str = str.replace(/[yY]/g, "ي");
+export function processInputToArabic(input) {
+  const transliterationMap = {
+    a: "ا",
+    b: "ب",
+    t: "ت",
+    th: "ث",
+    j: "ج",
+    H: "ح",
+    7: "ح",
+    kh: "خ",
+    5: "خ",
+    d: "د",
+    dh: "ذ",
+    r: "ر",
+    z: "ز",
+    s: "س",
+    sh: "ش",
+    S: "ص",
+    9: "ص",
+    D: "ض",
+    T: "ط",
+    6: "ط",
+    Z: "ظ",
+    gh: "غ",
+    3: "ع",
+    f: "ف",
+    q: "ق",
+    8: "ق",
+    k: "ك",
+    l: "ل",
+    m: "م",
+    n: "ن",
+    h: "ه",
+    w: "و",
+    y: "ي",
+    2: "ء",
+  };
 
-  return str;
+  const convertToken = (token) => {
+    let result = "";
+    let i = 0;
+    while (i < token.length) {
+      const rawTwoChar = token.slice(i, i + 2);
+      const rawOneChar = token[i];
+
+      const twoChar = transliterationMap[rawTwoChar]
+        ? rawTwoChar
+        : rawTwoChar.toLowerCase();
+      const oneChar = transliterationMap[rawOneChar]
+        ? rawOneChar
+        : rawOneChar.toLowerCase();
+
+      if (transliterationMap[twoChar]) {
+        result += transliterationMap[twoChar];
+        i += 2;
+      } else if (transliterationMap[oneChar]) {
+        result += transliterationMap[oneChar];
+        i += 1;
+      } else {
+        result += rawOneChar; // unknown, pass through
+        i += 1;
+      }
+    }
+    return result;
+  };
+
+  return input.split(" ").map(convertToken).join("");
 }
 
-function stripHTMLTags(str) {
+export function stripHTMLTags(str) {
   return str.replace(/<[^>]+>/g, "");
 }
 
-export { toastError, noResultsAlert, processInputToArabic, stripHTMLTags };
+export const getSarfAlternates = async (input) => {
+  if (input.length !== 3) {
+    console.warn("[getSarfAlternates] Input must be 3 letters:", input);
+    return [];
+  }
+
+  const dbRequest = window.indexedDB.open("hanswehr");
+
+  return new Promise((resolve, reject) => {
+    dbRequest.onsuccess = () => {
+      const db = dbRequest.result;
+      const tx = db.transaction("entries", "readonly");
+      const store = tx.objectStore("entries");
+      const getAllRequest = store.getAll();
+
+      getAllRequest.onsuccess = () => {
+        const entries = getAllRequest.result;
+        const existingRoots = new Set();
+
+        entries.forEach((entry) => {
+          (entry.searchableRoots || []).forEach((r) => existingRoots.add(r));
+        });
+
+        const [f, a, l] = input;
+        const candidates = new Set();
+
+        // Apply transformation rules
+        if (a === "ا") {
+          candidates.add(f + "و" + l);
+          candidates.add(f + "ي" + l);
+        } else {
+          candidates.add(f + a + "و");
+          candidates.add(f + a + "ي");
+          candidates.add("و" + a + l);
+          candidates.add("ي" + a + l);
+        }
+
+        const candidateArray = Array.from(candidates);
+        const matched = candidateArray.filter((root) =>
+          existingRoots.has(root)
+        );
+
+        // 🔍 Debug logs
+        console.log("[getSarfAlternates] Input:", input);
+        console.log("[getSarfAlternates] Candidates:", candidateArray);
+        console.log(
+          "[getSarfAlternates] Sample of existing roots:",
+          Array.from(existingRoots).slice(0, 10)
+        );
+        console.log("[getSarfAlternates] Matches:", matched);
+
+        resolve(matched);
+      };
+
+      getAllRequest.onerror = (e) => {
+        console.error("[getSarfAlternates] getAllRequest error:", e);
+        reject(e);
+      };
+    };
+
+    dbRequest.onerror = (e) => {
+      console.error("[getSarfAlternates] DB open error:", e);
+      reject(e);
+    };
+  });
+};
