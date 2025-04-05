@@ -1,4 +1,5 @@
-import { useState } from "react";
+// Modified Home.jsx with root autocomplete support, keyboard navigation, and sarf-based root suggestions
+import { useState, useEffect, useRef } from "react";
 import {
   Box,
   Typography,
@@ -8,10 +9,11 @@ import {
   Paper,
   Container,
   Tooltip,
-  Grid,
-  Switch,
-  ToggleButton,
-  Button,
+  InputAdornment,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemText,
 } from "@material-ui/core";
 import {
   Search as SearchIcon,
@@ -19,19 +21,19 @@ import {
 } from "@material-ui/icons";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import { useHistory, Link } from "react-router-dom";
-import InputAdornment from "@mui/material/InputAdornment";
-import { padding } from "@material-ui/system";
-import { StyledEngineProvider } from "@mui/material/styles";
-import "./styles.css";
-import { toastError, processInputToArabic } from "../../utils/utils";
 import Swal from "sweetalert2";
+import { toastError, processInputToArabic } from "../../utils/utils";
+import {
+  getMatchingRoots,
+  initDictionaryDB,
+  retrieveAllWordsWithRoot,
+} from "../../utils/dictionary-db";
 
 function GuestFooter() {
   return (
     <Paper
       sx={{
         marginTop: "calc(10% + 60px)",
-        width: "100%",
         position: "fixed",
         bottom: 0,
         width: "100%",
@@ -42,21 +44,10 @@ function GuestFooter() {
     >
       <Container maxWidth="lg">
         <Box
-          sx={{
-            flexGrow: 1,
-            justifyContent: "center",
-            display: "flex",
-            my: 1,
-          }}
+          sx={{ flexGrow: 1, justifyContent: "center", display: "flex", my: 1 }}
         ></Box>
-
         <Box
-          sx={{
-            flexGrow: 1,
-            justifyContent: "center",
-            display: "flex",
-            mb: 2,
-          }}
+          sx={{ flexGrow: 1, justifyContent: "center", display: "flex", mb: 2 }}
         >
           <Typography variant="caption" color="initial">
             Questions, Comments, Feedback?{" "}
@@ -72,36 +63,80 @@ function GuestFooter() {
 
 const Home = () => {
   const [word, setWord] = useState("");
-  const [switchState, setSwitchState] = useState("Roots");
+  const [suggestions, setSuggestions] = useState([]);
+  const [highlightedIndex, setHighlightedIndex] = useState(-1);
+  const [sarfSuggestions, setSarfSuggestions] = useState([]);
   const theme = useTheme();
   const history = useHistory();
+  const inputRef = useRef(null);
 
-  // const handleSwitchChange = (event) => {
-  //   setSwitchState(event.target.checked ? "Root" : "Noun");
-  // };
+  useEffect(() => {
+    initDictionaryDB();
+  }, []);
 
-  const showTransliterations = () => {
-    Swal.fire({
-      title: "Transliterations",
-      html: "<img src='../../../public/assets/transliterations.jpeg' style='width:150px;'>",
-    });
+  const handleChange = async (e) => {
+    const input = e.target.value;
+    setWord(input);
+    setHighlightedIndex(-1);
+
+    if (input.trim() === "") {
+      setSuggestions([]);
+      return;
+    }
+
+    const processed = processInputToArabic(input);
+    const matches = await getMatchingRoots(processed);
+    setSuggestions(matches.slice(0, 10));
   };
 
-  const handleSubmit = (event) => {
+  const handleSelectSuggestion = (selected) => {
+    setSarfSuggestions([]);
+    setSuggestions([]);
+    history.push(`/search/${selected}`);
+  };
+
+  const handleSubmit = async (event) => {
     event.preventDefault();
     const trimmedWord = word.trim();
     if (!trimmedWord || trimmedWord.split(" ").length > 1) {
-      if (!trimmedWord) {
-        toastError("Root to search cannot be empty");
-      } else {
-        toastError("Please input one root to search with no spaces");
-      }
-
+      toastError("Root to search cannot be empty or contain spaces");
       return;
     }
-    const processedWord = processInputToArabic(trimmedWord);
-    history.push(`/search/${processedWord}`);
+
+    const processed = processInputToArabic(trimmedWord);
+    setSarfSuggestions([]);
+    setSuggestions([]);
+
+    // Always navigate to definition page, let it handle the fallback
+    history.push(`/search/${processed}`);
   };
+
+  const handleKeyDown = (e) => {
+    if (suggestions.length === 0) return;
+
+    switch (e.key) {
+      case "ArrowDown":
+        e.preventDefault();
+        setHighlightedIndex((prev) => (prev + 1) % suggestions.length);
+        break;
+      case "ArrowUp":
+        e.preventDefault();
+        setHighlightedIndex(
+          (prev) => (prev - 1 + suggestions.length) % suggestions.length
+        );
+        break;
+      case "Enter":
+        if (highlightedIndex >= 0 && highlightedIndex < suggestions.length) {
+          handleSelectSuggestion(suggestions[highlightedIndex]);
+        } else {
+          handleSubmit(e);
+        }
+        break;
+      default:
+        break;
+    }
+  };
+
   return (
     <Box sx={{ ...theme.mixins.alignInTheCenter }}>
       <Box
@@ -125,23 +160,18 @@ const Home = () => {
         />
       </Box>
 
-      <Typography
-        color="primary"
-        sx={{
-          mt: 3,
-          mb: 1,
-        }}
-        variant="h4"
-      >
+      <Typography color="primary" sx={{ mt: 3, mb: 1 }} variant="h4">
         Hans Wehr
       </Typography>
       <Typography color="GrayText">Find meanings of arabic roots</Typography>
-      {/* <b>{switchState}</b> */}
-      <Box sx={{ width: "360px" }}>
-        <form onSubmit={handleSubmit} spacing={0}>
+
+      <Box sx={{ width: "360px", position: "relative" }}>
+        <form onSubmit={handleSubmit} spacing={0} autoComplete="off">
           <FilledInput
+            inputRef={inputRef}
             value={word}
-            onChange={(event) => setWord(event.target.value)}
+            onChange={handleChange}
+            onKeyDown={handleKeyDown}
             disableUnderline
             placeholder="Search for a root"
             sx={{
@@ -149,97 +179,105 @@ const Home = () => {
               backgroundColor: "white",
               borderRadius: 2,
               boxShadow: "0px 10px 25px rgba(0, 0, 0, 0.05)",
-              "& .MuiFilledInput-input": {
-                p: 2,
-              },
+              "& .MuiFilledInput-input": { p: 2 },
             }}
             startAdornment={<SearchIcon color="disabled" />}
             endAdornment={
               <Tooltip title="Search">
                 <InputAdornment position="end">
                   <ArrowForwardIcon
-                    aria-label="toggle password visibility"
                     onClick={handleSubmit}
-                    edge="end"
-                    transition="background-color 0.2s ease-in-out"
                     sx={{
                       "&:hover": {
                         color: "black",
                         backgroundColor: "#BABABA",
                         borderRadius: "50%",
-                        transition: "background-color 0.2s ease-in-out",
                       },
                     }}
-                  ></ArrowForwardIcon>
+                  />
                 </InputAdornment>
               </Tooltip>
             }
             fullWidth
           />
         </form>
+
+        {suggestions.length > 0 && (
+          <Paper
+            elevation={4}
+            sx={{
+              position: "absolute",
+              zIndex: 10,
+              width: "100%",
+              maxHeight: 220,
+              overflowY: "auto",
+              mt: 1,
+              borderRadius: 2,
+              boxShadow: "0px 4px 10px rgba(0,0,0,0.1)",
+              scrollbarWidth: "none", // Firefox
+              "&::-webkit-scrollbar": {
+                width: 6,
+              },
+              "&::-webkit-scrollbar-thumb": {
+                backgroundColor: "#ccc",
+                borderRadius: 10,
+              },
+              "&::-webkit-scrollbar-track": {
+                backgroundColor: "transparent",
+              },
+            }}
+          >
+            <List disablePadding>
+              {suggestions.map((s, i) => (
+                <ListItem
+                  disablePadding
+                  key={i}
+                  selected={i === highlightedIndex}
+                  sx={{
+                    "&.Mui-selected": {
+                      backgroundColor: theme.palette.action.hover,
+                    },
+                  }}
+                >
+                  <ListItemButton
+                    onClick={() => handleSelectSuggestion(s)}
+                    sx={{
+                      px: 2,
+                      py: 1,
+                      "&:hover": {
+                        backgroundColor: "#f5f5f5",
+                      },
+                    }}
+                  >
+                    <ListItemText
+                      primary={s}
+                      primaryTypographyProps={{ fontSize: 14 }}
+                    />
+                  </ListItemButton>
+                </ListItem>
+              ))}
+            </List>
+          </Paper>
+        )}
+
+        {sarfSuggestions.length > 0 && (
+          <Paper elevation={2} sx={{ p: 2, mt: -2, mb: 2 }}>
+            <Typography variant="body2" color="textSecondary">
+              Did you mean:
+            </Typography>
+            <List dense>
+              {sarfSuggestions.map((root, idx) => (
+                <ListItemButton
+                  key={idx}
+                  onClick={() => handleSelectSuggestion(root)}
+                >
+                  <ListItemText primary={root} />
+                </ListItemButton>
+              ))}
+            </List>
+          </Paper>
+        )}
       </Box>
-      {/* <Tooltip title="Type input as English Characters">
-        <Typography
-          color="GrayText"
-          sx={{
-            mb: 2,
-          }}
-          onClick={showTransliterations}
-        >
-          View Transliterations
-        </Typography>
-      </Tooltip> */}
-
-      {/* <StyledEngineProvider injectFirst>
-        <Box sx={{ display: "flex" }}>
-          <Box className="mask-box">
-            <Box
-              className="mask"
-              style={{
-                transform: `translateX(${
-                  switchState === "Roots" ? 0 : "100px"
-                })`,
-              }}
-            />
-            <Button
-              disableRipple
-              variant="text"
-              sx={{ color: switchState === "Roots" ? "#ffffff" : "#1623AE" }}
-              onClick={() => setSwitchState("Roots")}
-            >
-              Roots
-            </Button>
-            <Button
-              disableRipple
-              variant="text"
-              sx={{ color: switchState === "Nouns" ? "#ffffff" : "#0D0579" }}
-              onClick={() => setSwitchState("Nouns")}
-            >
-              Nouns
-            </Button>
-          </Box>
-        </Box>
-      </StyledEngineProvider> */}
-
-      {/* <Grid
-        component="label"
-        container
-        alignItems="center"
-        spacing={1}
-        justifyContent="center"
-        marginTop={0}
-        marginBottom={2}
-      >
-        <Grid item>Noun</Grid>
-        <Grid item>
-          <Switch
-            checked={switchState === "Root"} // relevant state for your case
-            onChange={handleSwitchChange}
-            value="checked" // some value you need
-          />
-        </Grid>
-        <Grid item>Root</Grid>
-      </Grid> */}
 
       <Tooltip title="Bookmarks">
         <IconButton
@@ -249,7 +287,7 @@ const Home = () => {
             borderRadius: 2,
             p: 2,
             color: "#fff",
-            background: (theme) => theme.palette.pink,
+            background: theme.palette.pink,
             boxShadow: "0px 10px 10px rgba(221, 114, 133, 0.2)",
             marginBottom: 20,
           }}
@@ -257,6 +295,7 @@ const Home = () => {
           <BookmarkIcon />
         </IconButton>
       </Tooltip>
+
       <GuestFooter />
     </Box>
   );

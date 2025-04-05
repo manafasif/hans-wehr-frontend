@@ -8,6 +8,7 @@ import Bookmarks from "./components/Bookmarks";
 import Definition from "./components/Definition";
 import logger, { LoggerContainer, useLoggerApi } from "logrock";
 import { Analytics } from "@vercel/analytics/react";
+import { initDictionaryDB } from "./utils/dictionary-db";
 
 const App = () => {
   const [bookmarks, setBookmarks] = useState(
@@ -17,6 +18,13 @@ const App = () => {
   useEffect(() => {
     localStorage.setItem("bookmarks", JSON.stringify(bookmarks));
   }, [bookmarks]);
+
+  useEffect(() => {
+    // Initialize dictionary DB on app start
+    initDictionaryDB().catch((err) =>
+      console.error("Failed to initialize dictionary DB:", err)
+    );
+  }, []);
 
   const addBookmark = (word, definitions) =>
     setBookmarks((oldBookmarks) => ({

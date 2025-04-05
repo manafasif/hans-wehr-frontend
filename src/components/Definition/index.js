@@ -29,10 +29,13 @@ import {
   processInputToArabic,
 } from "../../utils/utils";
 import Swal from "sweetalert2";
+import { Chip } from "@mui/material";
 
 import { FileCopyOutlined as CopyIcon } from "@mui/icons-material";
 import { CopyToClipboard } from "react-copy-to-clipboard";
-import { stripHTMLTags } from "../../utils/utils";
+import { stripHTMLTags, getSarfAlternates } from "../../utils/utils";
+import { retrieveAllWordsWithRoot } from "../../utils/dictionary-db";
+import { v4 as uuidv4 } from "uuid";
 
 import {
   Dialog,
@@ -84,11 +87,13 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
   const history = useHistory();
   // const [definitions, setDefinitions] = useState([]);
   // const [nouns, setNouns] = useState([]);
-  const [rootInfo, setRootInfo] = useState({});
+  const [rootInfo, setRootInfo] = useState([]);
   const [exist, setExist] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [successfullyConnected, setSuccessfullyConnected] = useState(false);
   const [error, setError] = useState(null);
+  const [sarfSuggestions, setSarfSuggestions] = useState([]);
+
   // const [audio, setAudio] = useState(null);
 
   const isBookmarked = Object.keys(bookmarks).includes(word);
@@ -110,13 +115,6 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
     });
 
     setRootInfo(newRootInfo);
-    // setDefinitions(data["definition"]);
-    // setNouns(data["nouns"]);
-    // console.log("New def:" + JSON.stringify(definitions));
-    // const phonetics = data[0].phonetics;
-    // if (!phonetics.length) return;
-    // const url = phonetics[0].audio.replace("//ssl", "https://ssl");
-    // setAudio(new Audio(url));
   }
 
   // handles retrieving data from API and sets state accordingly
@@ -124,38 +122,110 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
     const fetchDefinition = async () => {
       console.log("Useeffect Fired");
       try {
-        const resp = await axios.get(API_URL + `/root?root=${word}`);
-        updateState(resp.data["data"]);
+        await initDictionaryDB(); // ✅ ensure DB is ready before using it
+        const data = await retrieveAllWordsWithRoot(word);
 
-        setExist(resp.data["data"].length !== 0);
+        if (data.length > 0) {
+          // ✅ Root exists, update state as usual
+          updateState(data);
+          setExist(true);
+          setSuccessfullyConnected(true);
+          setLoaded(true);
+          setSarfSuggestions([]); // Clear any previous suggestions
+          return;
+        }
+
+        // ❌ No data from DB — try getting sarf alternatives
+        const suggestions = await getSarfAlternates(word);
+
+        if (suggestions.length > 0) {
+          // ✅ Suggestions found — show alert with links
+          const htmlLinks = suggestions
+            .map(
+              (s) =>
+                `<a href="#" class="sarf-link" data-root="${s}" style="margin: 4px; display: inline-block; padding: 6px 12px; background-color: #1976d2; color: white; border-radius: 16px; text-decoration: none;">${s}</a>`
+            )
+            .join("");
+
+          Swal.fire({
+            icon: "question",
+            title: `No results for "${word}"`,
+            html: `
+              <p>Did you mean one of these roots?</p>
+              <div style="margin-top: 10px;">${htmlLinks}</div>
+            `,
+            confirmButtonText: "Go to Homepage",
+            didOpen: () => {
+              const links = Swal.getPopup().querySelectorAll(".sarf-link");
+              links.forEach((el) =>
+                el.addEventListener("click", (e) => {
+                  e.preventDefault();
+                  const root = el.getAttribute("data-root");
+                  setLoaded(false);
+                  setSarfSuggestions([]); // clear state
+                  Swal.close();
+                  history.push(`/search/${root}`);
+                })
+              );
+            },
+          }).then((result) => {
+            if (result.isConfirmed) {
+              history.push("/");
+            }
+          });
+
+          setSarfSuggestions(suggestions); // for safety
+          setExist(false);
+          setSuccessfullyConnected(true);
+          setLoaded(true);
+          return;
+        }
+
+        // ❌ No suggestions either
+        Swal.fire({
+          icon: "question",
+          title: "No Results",
+          text: `No results found for ${word}`,
+          confirmButtonText: "Go back",
+        }).then((result) => {
+          if (result.isConfirmed) {
+            history.goBack();
+          }
+        });
+
+        setExist(false);
         setSuccessfullyConnected(true);
         setLoaded(true);
       } catch (err) {
         console.error(err);
         setError(err);
-        if (!err.response) {
-          setSuccessfullyConnected(false);
-        } else {
-          setSuccessfullyConnected(true);
-        }
         setExist(false);
         setLoaded(true);
+        setSuccessfullyConnected(false);
+
+        Swal.fire({
+          icon: "error",
+          title: "API Error",
+          text: `Error connecting to API: ${JSON.stringify(err)}`,
+          confirmButtonText: "Go back",
+        }).then((result) => {
+          if (result.isConfirmed) {
+            history.goBack();
+          }
+        });
       }
     };
 
-    // handles retreiving definition, either from API or cache
+    // handles retrieving definition, either from API or cache
     function getDefinition() {
       if (!isBookmarked) {
-        // definition is cached so retrieve from there
         fetchDefinition();
       } else if (
         !bookmarks[word][0] ||
         bookmarks[word][0]["responseVersion"] !== CURRENT_RESPONSE_VERS
       ) {
-        // definition needs to be rehydrated from bookmarks
         fetchDefinition();
       } else {
-        // retrieve from bookmarks (local storage)
         updateState(bookmarks[word]);
         setSuccessfullyConnected(true);
         setExist(true);
@@ -177,22 +247,19 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
         />
       );
     }
-    rootInfo.map((rootDefinition, index) => {
-      // render each definition
-      return (
-        <>
-          <SingleDefinition
-            word={word}
-            definition={rootDefinition}
-            countString={`${index + 1} of ${rootInfo.length}`}
-          />
-          ;
-          {index != rootInfo.length - 1 ? (
-            <Divider light={false} sx={{ display: "block", my: 3 }} />
-          ) : null}
-        </>
-      );
-    });
+
+    return rootInfo.map((rootDefinition, index) => (
+      <Fragment key={index}>
+        <SingleDefinition
+          word={word}
+          definition={rootDefinition}
+          countString={`${index + 1} of ${rootInfo.length}`}
+        />
+        {index !== rootInfo.length - 1 && (
+          <Divider light={false} sx={{ display: "block", my: 3 }} />
+        )}
+      </Fragment>
+    ));
   };
 
   if (!loaded)
@@ -219,22 +286,22 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
     });
     return <TopBar />;
   }
-  if (!exist) {
-    // alert user that no root was found
-    Swal.fire({
-      icon: "question",
-      title: "No Results",
-      text: `No results found for ${word}`,
-      confirmButtonText: "Go back",
-    }).then((result) => {
-      if (result.isConfirmed) {
-        // setLoaded(false);
-        history.goBack();
-        // window.location.reload();
-      }
-    });
-    return <TopBar />;
-  }
+  // if (!exist) {
+  //   // alert user that no root was found
+  //   Swal.fire({
+  //     icon: "question",
+  //     title: "No Results",
+  //     text: `No results found for ${word}`,
+  //     confirmButtonText: "Go back",
+  //   }).then((result) => {
+  //     if (result.isConfirmed) {
+  //       // setLoaded(false);
+  //       history.goBack();
+  //       // window.location.reload();
+  //     }
+  //   });
+  //   return <TopBar />;
+  // }
 
   const TopBarEndAdornment = () => {
     return (
@@ -270,42 +337,6 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
         >
           <BackIcon sx={{ color: "black", borderRadius: 0 }} />
         </IconButton>
-        {/* <form onSubmit={handleInputSubmit} spacing={0}>
-        <form
-            <FilledInput
-              value={searchInput}
-              onChange={(event) => setSearchInput(event.target.value)}
-              disableUnderline
-              placeholder="Search for a root"
-              sx={{
-                backgroundColor: "white",
-                borderRadius: 2,
-                boxShadow: "0px 10px 25px rgba(0, 0, 0, 0.05)",
-                "& .MuiFilledInput-input": {
-                  p: 2,
-                },
-              }}
-              startAdornment={<SearchIcon color="disabled" />}
-              endAdornment={
-                <Tooltip title="Search">
-                  <InputAdornment position="end">
-                    <ArrowForwardIcon
-                      aria-label="toggle password visibility"
-                      onClick={handleInputSubmit}
-                      edge="end"
-                      transition="background-color 0.2s ease-in-out"
-                      sx={{
-                        "&:hover": {
-                          color: "black",
-                          backgroundColor: "#BABABA",
-                          borderRadius: "50%",
-                          transition: "background-color 0.2s ease-in-out",
-                        },
-                      }}
-                    ></ArrowForwardIcon>
-                  </InputAdornment>
-                </Tooltip>
-              } */}
 
         <Box sx={{ width: "360px" }}>
           <form onSubmit={handleInputSubmit} spacing={0}>
@@ -413,83 +444,6 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
       {/* <TopBar /> */}
 
       <AllRootDefinitions />
-
-      {/* 
-      <Fragment key={123}>
-        <Divider sx={{ display: "block", my: 3 }} />
-        <b>Definition</b>
-        {exist &&
-          Object.keys(definitions).forEach((form) => {
-            const formNumber = formToInt[form];
-            return (
-              <Box
-                key={Math.random()}
-                sx={{
-                  boxShadow: "0px 10px 25px rgba(0, 0, 0, 0.05)",
-                  backgroundColor: "#fff",
-                  p: 2,
-                  borderRadius: 2,
-                  mt: 3,
-                }}
-              >
-                <Typography
-                  sx={{ textTransform: "capitalize" }}
-                  color="GrayText"
-                  variant="subtitle1"
-                >
-                  {form}
-                </Typography>
-                <Typography
-                  sx={{ my: 1 }}
-                  variant="body2"
-                  color="GrayText"
-                  key={definitions[form]}
-                >
-                  { {meaning.definitions.length > 1 && `${idx + 1}. `}{" "}}
-                  {definitions[form]}
-                </Typography>
-              </Box>
-            );
-            console.log("Form: " + form + " Def: " + definitions[form]);
-          })}
-      </Fragment> */}
-
-      {/* {definitions.map((def, idx) => (
-        <Fragment key={idx}>
-          <Divider sx={{ display: idx === 0 ? "none" : "block", my: 3 }} />
-          {def.meanings.map((meaning) => (
-            <Box
-              key={Math.random()}
-              sx={{
-                boxShadow: "0px 10px 25px rgba(0, 0, 0, 0.05)",
-                backgroundColor: "#fff",
-                p: 2,
-                borderRadius: 2,
-                mt: 3,
-              }}
-            >
-              <Typography
-                sx={{ textTransform: "capitalize" }}
-                color="GrayText"
-                variant="subtitle1"
-              >
-                {meaning.partOfSpeech}
-              </Typography>
-              {meaning.definitions.map((definition, idx) => (
-                <Typography
-                  sx={{ my: 1 }}
-                  variant="body2"
-                  color="GrayText"
-                  key={definition.definition}
-                >
-                  {meaning.definitions.length > 1 && `${idx + 1}. `}{" "}
-                  {definition.definition}
-                </Typography>
-              ))}
-            </Box>
-          ))}
-        </Fragment>
-      ))} */}
     </>
   );
 };
@@ -694,7 +648,7 @@ const SingleDefinition = ({ word, definition, countString }) => {
             py: 5,
             color: "white",
             borderRadius: 2,
-            position: "relative", // add this to make position absolute work
+            position: "relative",
           }}
         >
           <Box
@@ -718,7 +672,6 @@ const SingleDefinition = ({ word, definition, countString }) => {
             {word}
           </Typography>
 
-          {/* Report Error Icon */}
           <Tooltip title="Report Error">
             <IconButton
               size="small"
@@ -737,12 +690,9 @@ const SingleDefinition = ({ word, definition, countString }) => {
             </IconButton>
           </Tooltip>
 
-          {/* Report Error Form Dialog */}
           <Dialog open={reportErrorOpen} onClose={handleCloseReportError}>
             <DialogTitle>Report Error</DialogTitle>
             <DialogContent>
-              {/* Add your form components here */}
-              {/* Example: */}
               <Typography>Report error not supported yet! </Typography>
             </DialogContent>
             <DialogActions>
@@ -753,77 +703,55 @@ const SingleDefinition = ({ word, definition, countString }) => {
             </DialogActions>
           </Dialog>
         </Stack>
-        {/* <Stack
-          direction="row"
-          alignItems="center"
-          justifyContent="space-between"
-          sx={{
-            mt: 3,
-            background:
-              "linear-gradient(90.17deg, #191E5D 0.14%, #161F75 98.58%)",
-            boxShadow: "0px 10px 20px rgba(19, 23, 71, 0.25)",
-            px: 4,
-            py: 5,
-            color: "white",
-            borderRadius: 2,
-          }}
-        >
-          <Typography sx={{ textTransform: "capitalize" }} variant="h5">
-            <sup>1</sup> {word}
-          </Typography>
-          {/* {
-            <IconButton>
-              <PlayIcon />
-            </IconButton>
-          } 
-        </Stack>  */}
       </Tooltip>
 
-      <Fragment key={1}>
-        <Divider varianr="inset" light={true} sx={{ display: "none", my: 3 }} />
+      <Fragment key={`DefinitionsBlock-${countString}`}>
+        <Divider variant="inset" light={true} sx={{ display: "none", my: 3 }} />
 
-        {definition["definitions"].map((formEntry, index) => (
+        {definition["definitions"].map((formEntry) => (
           <DefinitionCard
+            key={`DefCard-${uuidv4()}`}
             formEntry={formEntry}
-            i={index}
+            i={uuidv4()}
             countString={countString}
           />
         ))}
       </Fragment>
 
-      <Fragment key={`NounsBlock-${countString}`}>
-        <Divider sx={{ display: "block", my: 3 }} />
+      {definition["nouns"] && definition["nouns"].length > 0 && (
+        <Fragment key={`NounsBlock-${countString}`}>
+          <Divider sx={{ display: "block", my: 3 }} />
 
-        <Stack
-          direction="row"
-          alignItems="center"
-          justifyContent="space-between"
-          sx={{
-            mt: 3,
-            background:
-              "linear-gradient(90.17deg, #212BBB 0.14%, #0F133A 98.58%)",
-            boxShadow: "0px 10px 20px rgba(19, 23, 71, 0.25)",
-            px: 4,
-            py: 5,
-            color: "white",
-            borderRadius: 2,
-          }}
-        >
-          <Typography sx={{ textTransform: "capitalize" }} variant="h6">
-            Nouns
-          </Typography>
-          {/* {
-          <IconButton>
-            <PlayIcon />
-          </IconButton>
-        } */}
-        </Stack>
+          <Stack
+            direction="row"
+            alignItems="center"
+            justifyContent="space-between"
+            sx={{
+              mt: 3,
+              background:
+                "linear-gradient(90.17deg, #212BBB 0.14%, #0F133A 98.58%)",
+              boxShadow: "0px 10px 20px rgba(19, 23, 71, 0.25)",
+              px: 4,
+              py: 5,
+              color: "white",
+              borderRadius: 2,
+            }}
+          >
+            <Typography sx={{ textTransform: "capitalize" }} variant="h6">
+              Nouns
+            </Typography>
+          </Stack>
 
-        {definition["nouns"] &&
-          definition["nouns"].map((nounEntry, i) => (
-            <NounCard nounEntry={nounEntry} i={i} countString={countString} />
+          {definition["nouns"].map((nounEntry) => (
+            <NounCard
+              key={`NounCard-${uuidv4()}`}
+              nounEntry={nounEntry}
+              i={uuidv4()}
+              countString={countString}
+            />
           ))}
-      </Fragment>
+        </Fragment>
+      )}
     </>
   );
 };
