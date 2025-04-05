@@ -1,15 +1,26 @@
-## Available Scripts
+# 📖 Hans Wehr Arabic Dictionary (hanswehr.app)
 
-In the project directory, you can run:
+An open-source digital Arabic dictionary built to serve the needs of students, educators, and researchers. Inspired by the legendary **Hans Wehr** lexicon, this web-based tool offers intuitive root-based search, offline access, and fast, responsive design tailored for modern language learning.
 
-### `yarn start`
+🌐 Try it now: [hanswehr.app](https://hanswehr.app)
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+---
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+## ✨ Features
 
-## Live Site
+- 🔍 **Arabic Root Search** — Enter roots in Arabic, transliteration, or even **Chat Arabic (3arabi)** like `3 l m` → علم.
+- 📚 **Offline Support** — Fully functional as a **Progressive Web App (PWA)**; install it on your phone or computer.
+- ⌨️ **Keyboard Navigation** — Autocomplete suggestions navigable via arrow keys + enter.
+- 🧠 **Smart Transliteration** — Converts English input, Chat Arabic, and phonetic spelling into accurate Arabic script.
+- 📑 **Bookmarking** — Save words you frequently look up.
+- 🛠️ **Open Source** — Hackable, inspectable, and made with ❤️ for the Arabic learning community.
 
-The site is live at [https://hanswehr.app/]. Feedback is appreciated!
+---
+
+## 🚀 Getting Started
+
+```bash
+git clone [https://github.com/Hans-Wehr-Arabic-Dictionary/hans-wehr-frontend.git](https://github.com/Hans-Wehr-Arabic-Dictionary/hans-wehr-frontend.git)
+cd hans-wehr-frontend
+yarn install
+yarn start
