@@ -181,7 +181,17 @@ const Home = () => {
               backgroundColor: "white",
               borderRadius: 2,
               boxShadow: "0px 10px 25px rgba(0, 0, 0, 0.05)",
-              "& .MuiFilledInput-input": { p: 2 },
+              height: 48, // explicitly control height
+              display: "flex",
+              alignItems: "center",
+              fontSize: "16px",
+              "& .MuiFilledInput-input": {
+                p: "12px 14px",
+                lineHeight: 1.5,
+                fontFamily: /[\u0600-\u06FF]/.test(word)
+                  ? "'Noto Naskh Arabic', 'Scheherazade', serif"
+                  : "inherit",
+              },
             }}
             startAdornment={<SearchIcon color="disabled" />}
             endAdornment={
@@ -253,7 +263,12 @@ const Home = () => {
                   >
                     <ListItemText
                       primary={s}
-                      primaryTypographyProps={{ fontSize: 14 }}
+                      primaryTypographyProps={{
+                        fontSize: 18,
+                        fontFamily: /[\u0600-\u06FF]/.test(s)
+                          ? "'Noto Naskh Arabic', 'Scheherazade', serif"
+                          : "inherit",
+                      }}
                     />
                   </ListItemButton>
                 </ListItem>
