@@ -29,6 +29,56 @@ import {
   retrieveAllWordsWithRoot,
 } from "../../utils/dictionary-db";
 import TypingAnimation from "./typingAnimation";
+import StyleIcon from "@mui/icons-material/Style";
+
+const ButtonsBox = () => {
+  return (
+    <Box>
+      <Tooltip title="Bookmarks">
+        <IconButton
+          to="/bookmarks"
+          component={Link}
+          sx={{
+            borderRadius: 2,
+            p: 2,
+            marginRight: 2,
+            color: "#fff",
+            background: (theme) => theme.palette.blue,
+            boxShadow: "0px 10px 10px rgba(221, 114, 133, 0.2)",
+            marginBottom: 20,
+            transition: "transform 0.3s ease-in-out",
+            ":hover": {
+              transform: "scale(1.1)",
+            },
+          }}
+        >
+          <BookmarkIcon />
+        </IconButton>
+      </Tooltip>
+
+      <Tooltip title="Flashcards">
+        <IconButton
+          to="/flashcards"
+          component={Link}
+          sx={{
+            borderRadius: 2,
+            p: 2,
+            color: "#fff",
+            background: (theme) => theme.palette.blueAlternative,
+            boxShadow: "0px 10px 10px rgba(221, 114, 133, 0.2)",
+            marginBottom: 20,
+            transition: "transform 0.3s ease-in-out",
+            ":hover": {
+              transform: "scale(1.1)",
+            },
+          }}
+        >
+          <StyleIcon />
+        </IconButton>
+      </Tooltip>
+    </Box>
+  );
+};
 
 function GuestFooter() {
   return (
@@ -353,7 +403,9 @@ const Home = () => {
         )}
       </Box>
 
-      <Tooltip title="Bookmarks">
+      <ButtonsBox />
+
+      {/* <Tooltip title="Bookmarks">
         <IconButton
           to="/bookmarks"
           component={Link}
@@ -368,7 +420,7 @@ const Home = () => {
         >
           <BookmarkIcon />
         </IconButton>
-      </Tooltip>
+      </Tooltip> */}
 
       {/* <GuestFooter /> */}
     </Box>
