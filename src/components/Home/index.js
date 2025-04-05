@@ -62,6 +62,19 @@ function GuestFooter() {
   );
 }
 
+const Toast = Swal.mixin({
+  toast: true,
+  position: "bottom-end",
+  showConfirmButton: false,
+  showCloseButton: true,
+  timer: 10000,
+  timerProgressBar: true,
+  didOpen: (toast) => {
+    toast.addEventListener("mouseenter", Swal.stopTimer);
+    toast.addEventListener("mouseleave", Swal.resumeTimer);
+  },
+});
+
 const Home = () => {
   const [word, setWord] = useState("");
   const [suggestions, setSuggestions] = useState([]);
@@ -72,8 +85,52 @@ const Home = () => {
   const inputRef = useRef(null);
   const placeholder = TypingAnimation();
 
+  // install as pwa prompt
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [showInstallPrompt, setShowInstallPrompt] = useState(false);
+
   useEffect(() => {
     initDictionaryDB();
+  }, []);
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+
+      Toast.fire({
+        icon: "info",
+        title:
+          '<span style="margin-right: 10px;">📲</span>Install this app for faster, offline access!',
+        html: `<button id="installBtn" style="
+          margin-top: 8px;
+          background: #1976d2;
+          color: white;
+          border: none;
+          padding: 6px 12px;
+          border-radius: 4px;
+          cursor: pointer;
+        ">Install</button>`,
+        didOpen: () => {
+          document
+            .getElementById("installBtn")
+            .addEventListener("click", async () => {
+              e.prompt();
+              const result = await e.userChoice;
+              if (result.outcome === "accepted") {
+                console.log("User accepted the install prompt");
+              }
+            });
+        },
+      });
+    };
+
+    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+    return () =>
+      window.removeEventListener(
+        "beforeinstallprompt",
+        handleBeforeInstallPrompt
+      );
   }, []);
 
   const handleChange = async (e) => {
@@ -100,8 +157,8 @@ const Home = () => {
   const handleSubmit = async (event) => {
     event.preventDefault();
     const trimmedWord = word.trim();
-    if (!trimmedWord || trimmedWord.split(" ").length > 1) {
-      toastError("Root to search cannot be empty or contain spaces");
+    if (!trimmedWord) {
+      toastError("Root to search cannot be empty.");
       return;
     }
 

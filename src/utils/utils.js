@@ -38,7 +38,9 @@ export function processInputToArabic(input) {
     th: "ث",
     j: "ج",
     H: "ح",
+    7: "ح",
     kh: "خ",
+    5: "خ",
     d: "د",
     dh: "ذ",
     r: "ر",
@@ -46,12 +48,16 @@ export function processInputToArabic(input) {
     s: "س",
     sh: "ش",
     S: "ص",
+    9: "ص",
     D: "ض",
     T: "ط",
+    6: "ط",
     Z: "ظ",
     gh: "غ",
+    3: "ع",
     f: "ف",
     q: "ق",
+    8: "ق",
     k: "ك",
     l: "ل",
     m: "م",
@@ -59,27 +65,38 @@ export function processInputToArabic(input) {
     h: "ه",
     w: "و",
     y: "ي",
+    2: "ء",
   };
 
-  let output = "";
-  let i = 0;
-  while (i < input.length) {
-    const twoChar = input.slice(i, i + 2);
-    const oneChar = input[i];
+  const convertToken = (token) => {
+    let result = "";
+    let i = 0;
+    while (i < token.length) {
+      const rawTwoChar = token.slice(i, i + 2);
+      const rawOneChar = token[i];
 
-    if (transliterationMap[twoChar]) {
-      output += transliterationMap[twoChar];
-      i += 2;
-    } else if (transliterationMap[oneChar]) {
-      output += transliterationMap[oneChar];
-      i += 1;
-    } else {
-      output += oneChar; // fallback: preserve unknown chars
-      i += 1;
+      const twoChar = transliterationMap[rawTwoChar]
+        ? rawTwoChar
+        : rawTwoChar.toLowerCase();
+      const oneChar = transliterationMap[rawOneChar]
+        ? rawOneChar
+        : rawOneChar.toLowerCase();
+
+      if (transliterationMap[twoChar]) {
+        result += transliterationMap[twoChar];
+        i += 2;
+      } else if (transliterationMap[oneChar]) {
+        result += transliterationMap[oneChar];
+        i += 1;
+      } else {
+        result += rawOneChar; // unknown, pass through
+        i += 1;
+      }
     }
-  }
+    return result;
+  };
 
-  return output;
+  return input.split(" ").map(convertToken).join("");
 }
 
 export function stripHTMLTags(str) {
