@@ -28,6 +28,7 @@ import {
   initDictionaryDB,
   retrieveAllWordsWithRoot,
 } from "../../utils/dictionary-db";
+import TypingAnimation from "./typingAnimation";
 
 function GuestFooter() {
   return (
@@ -69,6 +70,7 @@ const Home = () => {
   const theme = useTheme();
   const history = useHistory();
   const inputRef = useRef(null);
+  const placeholder = TypingAnimation();
 
   useEffect(() => {
     initDictionaryDB();
@@ -173,7 +175,7 @@ const Home = () => {
             onChange={handleChange}
             onKeyDown={handleKeyDown}
             disableUnderline
-            placeholder="Search for a root"
+            placeholder={placeholder}
             sx={{
               my: 4,
               backgroundColor: "white",
