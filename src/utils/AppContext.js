@@ -3,17 +3,22 @@ import Papa from "papaparse";
 import Swal from "sweetalert2";
 import axios from "axios";
 
+import {
+  uploadFlashcardsToDrive,
+  fetchFlashcardsFromDrive,
+} from "./googleDrive";
+
+import {
+  signInWithGoogle,
+  initGapiClient,
+  signOutGoogle,
+} from "../utils/googleAuth";
+
 // Create a context for addCollection and other functions
 const AppContext = createContext();
 
 // Create a context provider
 export const AppContextProvider = ({ children }) => {
-  const LOCAL = process.env.REACT_APP_LOCAL;
-  var API_URL = "https://api.hanswehr.com";
-  if (LOCAL === "1") {
-    API_URL = "http://localhost:8080";
-  }
-
   const [bookmarks, setBookmarks] = useState(
     JSON.parse(localStorage.getItem("bookmarks")) || {}
   );
@@ -45,69 +50,51 @@ export const AppContextProvider = ({ children }) => {
     localStorage.setItem("flashcards", JSON.stringify(flashcards));
   }, [flashcards]);
 
-  const updateDBFlashcards = (newFlashcards = flashcards) => {
-    console.log("updating DB flashcards");
+  const updateDBFlashcards = async (newFlashcards = flashcards) => {
     if (userData) {
-      const token = localStorage.getItem("jwtToken");
-
-      const flashcardUpdateRequest = {
-        method: "POST",
-        url: API_URL + `/flashcards/insert`,
-        headers: {
-          "content-type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        data: {
-          username: userData.username,
-          flashcards: newFlashcards,
-        },
-      };
-
-      axios
-        .request(flashcardUpdateRequest)
-        .then((response) => {
-          console.log(response);
-        })
-        .catch((error) => {
-          console.log(error);
-        });
+      try {
+        await uploadFlashcardsToDrive(newFlashcards);
+        console.log("Flashcards synced to Google Drive.");
+      } catch (err) {
+        console.error("Failed to sync to Google Drive", err);
+      }
     }
   };
 
-  const refreshFlashcards = (
-    username = userData ? userData.username : null
-  ) => {
-    if (!userData) {
-      return;
-    }
-    // Get the JWT token from localStorage
-    const token = localStorage.getItem("jwtToken");
+  // const refreshFlashcards = (
+  //   username = userData ? userData.username : null
+  // ) => {
+  //   if (!userData) {
+  //     return;
+  //   }
+  //   // Get the JWT token from localStorage
+  //   const token = localStorage.getItem("jwtToken");
 
-    const flashcardPullRequest = {
-      method: "GET",
-      url: API_URL + `/flashcards/get`,
-      headers: {
-        "content-type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      data: {
-        username: username,
-      },
-    };
+  //   const flashcardPullRequest = {
+  //     method: "GET",
+  //     url: API_URL + `/flashcards/get`,
+  //     headers: {
+  //       "content-type": "application/json",
+  //       Authorization: `Bearer ${token}`,
+  //     },
+  //     data: {
+  //       username: username,
+  //     },
+  //   };
 
-    axios
-      .request(flashcardPullRequest)
-      .then((response) => {
-        console.log(
-          "successfully requested flashcards",
-          response.data.flashcards
-        );
-        setFlashcards(response.data.flashcards);
-      })
-      .catch((error) => {
-        console.log(error);
-      });
-  };
+  //   axios
+  //     .request(flashcardPullRequest)
+  //     .then((response) => {
+  //       console.log(
+  //         "successfully requested flashcards",
+  //         response.data.flashcards
+  //       );
+  //       setFlashcards(response.data.flashcards);
+  //     })
+  //     .catch((error) => {
+  //       console.log(error);
+  //     });
+  // };
 
   const CURRENT_FLASHCARDS_VERSION = "1.1";
   const flashcards_version = localStorage.getItem("flashcards_version");
@@ -286,27 +273,6 @@ export const AppContextProvider = ({ children }) => {
         document.body.removeChild(a);
       },
     });
-
-    // console.log(csvData);
-
-    // Create a CSV string from the data
-    // const csvString = Papa.unparse(csvData);
-
-    // // Create a Blob with the CSV data
-    // const blob = new Blob(["\uFEFF", csvString], {
-    //   type: "text/csv;charset=utf-8;",
-    // });
-
-    // // Create a download link and trigger the download
-    // const url = window.URL.createObjectURL(blob);
-    // const a = document.createElement("a");
-    // a.style.display = "none";
-    // a.href = url;
-    // a.download = "flashcards.csv";
-    // document.body.appendChild(a);
-    // a.click();
-    // window.URL.revokeObjectURL(url);
-    // document.body.removeChild(a);
   };
 
   const handleExportJSON = () => {
@@ -379,193 +345,31 @@ export const AppContextProvider = ({ children }) => {
     JSON.parse(localStorage.getItem("userData")) || null
   );
 
-  useEffect(() => {
-    localStorage.setItem("userData", JSON.stringify(userData));
-  }, [userData]);
-
   const handleLogin = async () => {
-    const { value: username } = await Swal.fire({
-      title: "Enter your username",
-      input: "text",
-      inputPlaceholder: "Username",
-      inputAttributes: {
-        required: "true",
-      },
-    });
+    try {
+      await initGapiClient();
 
-    const { value: password } = await Swal.fire({
-      title: "Enter your password",
-      input: "password",
-      inputPlaceholder: "Password",
-      inputAttributes: {
-        required: "true",
-      },
-    });
+      const userInfo = await signInWithGoogle(); // returns the resolved userInfo
+      if (!userInfo?.accessToken) throw new Error("Access token not received");
 
-    if (username && password) {
-      // Perform login action here
-      const loginRequest = {
-        method: "POST",
-        url: API_URL + `/auth/login`,
-        headers: {
-          "content-type": "application/json",
-        },
-        data: {
-          username: username,
-          password: password,
-        },
-      };
+      setUserData(userInfo);
+      localStorage.setItem("userData", JSON.stringify(userInfo));
 
-      axios
-        .request(loginRequest)
-        .then((response) => {
-          console.log(response);
-
-          if (response.data.token) {
-            setUserData({
-              username: username,
-            });
-            localStorage.setItem("jwtToken", response.data.token);
-            setFlashcards(response.data.flashcards);
-            // refreshFlashcards(username);
-          } else {
-            Swal.fire({
-              icon: "error",
-              title: "Authentication Failed",
-              text: "Invalid username or password",
-            });
-          }
-        })
-        .catch((error) => {
-          console.log(error, error.response); // Log the error and response for debugging
-
-          if (error.response && error.response.status === 401) {
-            // Handle invalid username or password
-            Swal.fire({
-              icon: "error",
-              title: "Authentication Failed",
-              text: "Invalid username or password",
-            });
-          } else {
-            // Handle other errors (e.g., unable to connect to API)
-            Swal.fire({
-              icon: "error",
-              title: "Authentication Failed",
-              text: "Unable to connect to API",
-            });
-          }
-        });
+      const driveFlashcards = await fetchFlashcardsFromDrive();
+      if (driveFlashcards) {
+        setFlashcards(driveFlashcards);
+      }
+    } catch (err) {
+      console.error("Google Login Failed", err);
     }
   };
 
-  const handleRegister = async () => {
-    // let usernameAvailable = false;
-
-    // while (!usernameAvailable) {
-    Swal.fire({
-      title: "Enter your desired username",
-      input: "text",
-      inputPlaceholder: "Username",
-      inputAttributes: {
-        // required: "true",
-      },
-      preConfirm: async (username) => {
-        if (!username) {
-          Swal.showValidationMessage("Please enter a username");
-          return;
-        }
-        const checkUsernameRequest = {
-          method: "POST",
-          url: API_URL + `/auth/check-username`,
-          headers: {
-            "content-type": "application/json",
-          },
-          data: {
-            username: username,
-          },
-        };
-
-        return axios
-          .request(checkUsernameRequest)
-          .then((response) => {
-            console.log(response);
-            if (
-              response.status === 200 &&
-              "status" in response.data &&
-              response.data["status"] === "Successful"
-            ) {
-              // Username is available, prompt for password
-              return Swal.fire({
-                title: "Enter your password",
-                input: "password",
-                inputAttributes: {},
-                preConfirm: async (password) => {
-                  if (!password) {
-                    Swal.showValidationMessage("Please enter a password");
-                    return;
-                  }
-
-                  // Perform registration with username and password
-                  const registerRequest = {
-                    method: "POST",
-                    url: API_URL + `/auth/register`,
-                    headers: {
-                      "content-type": "application/json",
-                    },
-                    data: {
-                      username: username,
-                      password: password,
-                      flashcards: flashcards ? flashcards : {},
-                    },
-                  };
-
-                  try {
-                    const registerResponse = await axios.request(
-                      registerRequest
-                    );
-                    console.log(registerResponse);
-
-                    if (registerResponse.status === 200) {
-                      console.log("Successfully registered");
-                      setUserData({
-                        username: username,
-                      });
-                      localStorage.setItem(
-                        "jwtToken",
-                        registerResponse.data.token
-                      );
-
-                      return { username: username, isConfirmed: true };
-                    } else {
-                      console.log("Registration failed");
-                      Swal.showValidationMessage(
-                        `Error registering: ${registerResponse.data.message}`
-                      );
-                    }
-                  } catch (error) {
-                    console.log("Encountered an error", error.toJSON());
-                    throw new Error(`Error Registering`);
-                  }
-                },
-              });
-            } else {
-              console.log("username taken");
-              Swal.showValidationMessage(`Username ${username} is taken`);
-            }
-          })
-          .catch(function (error) {
-            console.log("encountered an error", error.toJSON());
-            throw new Error(`Error Registering`);
-            // Swal.showValidationMessage(`Error registering`);
-          });
-      },
-    });
-  };
-
   const handleLogout = () => {
+    signOutGoogle();
     setUserData(null);
     setFlashcards({});
-    localStorage.setItem("jwtToken", null);
+    localStorage.removeItem("userData");
+    sessionStorage.removeItem("accessToken");
   };
 
   return (
@@ -586,10 +390,9 @@ export const AppContextProvider = ({ children }) => {
         handleExportCSV,
         addCollectionWithFlashcard,
         userData,
+        setUserData,
         handleLogin,
         handleLogout,
-        refreshFlashcards,
-        handleRegister,
         updateDBFlashcards,
         handleExportJSON,
         handleImportJSON,
@@ -602,4 +405,21 @@ export const AppContextProvider = ({ children }) => {
 
 export const useAppContext = () => {
   return useContext(AppContext);
+};
+
+export const renderGoogleLogin = (elementId, callback) => {
+  window.google.accounts.id.initialize({
+    client_id: process.env.REACT_APP_GOOGLE_CLIENT_ID,
+    callback: (response) => {
+      const idToken = response.credential;
+      const base64Url = idToken.split(".")[1];
+      const userInfo = JSON.parse(atob(base64Url));
+      callback(userInfo); // name, email, etc.
+    },
+  });
+
+  window.google.accounts.id.renderButton(document.getElementById(elementId), {
+    theme: "outline",
+    size: "large",
+  });
 };

@@ -779,20 +779,15 @@ const DefinitionCard = ({ formEntry, i, countString, root }) => {
 };
 
 // renders a single card for a noun
-const NounCard = ({ nounEntry, i, countString }) => {
-  const [copied, setCopied] = useState(false);
+const NounCard = ({ nounEntry, i, countString, root }) => {
+  const [displayShort, setDisplayShort] = useState(false);
 
-  const handleCopy = () => {
-    setCopied(true);
-    setTimeout(() => {
-      setCopied(false);
-    }, 1000);
-  };
-
-  const buttonStyles = {
-    transition: "opacity 0.5s ease",
-    opacity: copied ? 0 : 1,
-  };
+  let transliterations = nounEntry.transliteration
+    ? `${nounEntry.transliteration}`
+    : null;
+  if (transliterations && nounEntry.plural.transliteration) {
+    transliterations = `${transliterations} pl. ${nounEntry.plural.transliteration}`;
+  }
 
   return (
     <Box
@@ -806,35 +801,29 @@ const NounCard = ({ nounEntry, i, countString }) => {
         position: "relative",
       }}
     >
-      <CopyToClipboard
-        text={`${nounEntry["text"]} ${
+      <CardButtons
+        shortNotifText={`${nounEntry["text"]} ${
+          nounEntry["plural"]["text"]
+            ? `pl. ${nounEntry["plural"]["text"]}`
+            : ""
+        }`}
+        textToCopy={`${nounEntry["text"]} ${
           nounEntry["plural"]["text"]
             ? `pl. ${nounEntry["plural"]["text"]}`
             : ""
         } \n${stripHTMLTags(nounEntry["translation"]["text"])}`}
-        onCopy={handleCopy}
-        key={`NounCopyButton-${i}-${countString}`}
-      >
-        <IconButton
-          size="small"
-          onClick={handleCopy}
-          style={buttonStyles}
-          disabled={copied}
-          sx={{
-            position: "absolute",
-            bottom: 0,
-            right: 0,
-            p: 1,
-            zIndex: 1,
-            color: "gray",
-            "& svg": {
-              fontSize: 14,
-            },
-          }}
-        >
-          <CopyIcon />
-        </IconButton>
-      </CopyToClipboard>
+        word={nounEntry.text}
+        definition={
+          displayShort
+            ? nounEntry.translation.short
+            : nounEntry.translation.text
+        }
+        wordID={nounEntry.id}
+        root={root}
+        displayShort={displayShort}
+        setDisplayShort={setDisplayShort}
+      />
+
       <Typography color="GrayText" variant="subtitle1">
         {`${nounEntry["text"]} ${
           nounEntry["plural"]["text"]
@@ -849,7 +838,8 @@ const NounCard = ({ nounEntry, i, countString }) => {
         fontWeight={550}
         key={`NounsEntry-${i}-${countString}`}
       >
-        {nounEntry.transliteration ? `${nounEntry.transliteration}` : null}
+        {transliterations}
+        {/* {nounEntry.transliteration ? `${nounEntry.transliteration}` : null} */}
       </Typography>
       <Typography
         sx={{ my: 1 }}
@@ -857,7 +847,9 @@ const NounCard = ({ nounEntry, i, countString }) => {
         color="GrayText"
         key={`NounsDef-${i}-${countString}`}
         dangerouslySetInnerHTML={{
-          __html: nounEntry["translation"]["text"],
+          __html: displayShort
+            ? nounEntry["translation"]["short"]
+            : nounEntry["translation"]["text"],
         }}
       ></Typography>
     </Box>
@@ -891,7 +883,7 @@ const SingleDefinition = ({ word, definition, countString }) => {
             py: 5,
             color: "white",
             borderRadius: 2,
-            position: "relative",
+            position: "relative", // add this to make position absolute work
           }}
         >
           <Box
@@ -915,6 +907,7 @@ const SingleDefinition = ({ word, definition, countString }) => {
             {word}
           </Typography>
 
+          {/* Report Error Icon */}
           <Tooltip title="Report Error">
             <IconButton
               size="small"
@@ -933,35 +926,31 @@ const SingleDefinition = ({ word, definition, countString }) => {
             </IconButton>
           </Tooltip>
 
-          <Dialog open={reportErrorOpen} onClose={handleCloseReportError}>
-            <DialogTitle>Report Error</DialogTitle>
-            <DialogContent>
-              <Typography>Report error not supported yet! </Typography>
-            </DialogContent>
-            <DialogActions>
-              <Button onClick={handleCloseReportError}>Cancel</Button>
-              <Button onClick={handleCloseReportError} color="primary">
-                Submit
-              </Button>
-            </DialogActions>
-          </Dialog>
+          {/* Report Error Form Dialog */}
+          {/* TODO */}
+          {/* <ReportErrorDialog
+            open={reportErrorOpen}
+            handleClose={handleCloseReportError}
+            word={word}
+          /> */}
         </Stack>
       </Tooltip>
 
-      <Fragment key={`DefinitionsBlock-${countString}`}>
-        <Divider variant="inset" light={true} sx={{ display: "none", my: 3 }} />
+      <Fragment key={1}>
+        <Divider varianr="inset" light={true} sx={{ display: "none", my: 3 }} />
 
-        {definition["definitions"].map((formEntry) => (
+        {definition["definitions"].map((formEntry, index) => (
           <DefinitionCard
-            key={`DefCard-${uuidv4()}`}
             formEntry={formEntry}
-            i={uuidv4()}
+            i={index}
+            key={`DefinitionCard-${countString}-${index}`}
             countString={countString}
+            root={word}
           />
         ))}
       </Fragment>
 
-      {definition["nouns"] && definition["nouns"].length > 0 && (
+      {definition["nouns"].length ? (
         <Fragment key={`NounsBlock-${countString}`}>
           <Divider sx={{ display: "block", my: 3 }} />
 
@@ -980,21 +969,27 @@ const SingleDefinition = ({ word, definition, countString }) => {
               borderRadius: 2,
             }}
           >
-            <Typography sx={{ textTransform: "capitalize" }} variant="h6">
+            <Typography
+              sx={{ textTransform: "capitalize" }}
+              variant="h6"
+              key={`NounsCard-${countString}`}
+            >
               Nouns
             </Typography>
           </Stack>
 
-          {definition["nouns"].map((nounEntry) => (
-            <NounCard
-              key={`NounCard-${uuidv4()}`}
-              nounEntry={nounEntry}
-              i={uuidv4()}
-              countString={countString}
-            />
-          ))}
+          {definition["nouns"] &&
+            definition["nouns"].map((nounEntry, i) => (
+              <NounCard
+                nounEntry={nounEntry}
+                i={i}
+                key={`NounCard-${countString}-${i}`}
+                countString={countString}
+                root={word}
+              />
+            ))}
         </Fragment>
-      )}
+      ) : null}
     </>
   );
 };

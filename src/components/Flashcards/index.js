@@ -166,7 +166,6 @@ const Flashcards = () => {
     removeFlashcard,
     handleExportCSV,
     getCollectionNames,
-    refreshFlashcards,
     userData,
     updateDBFlashcards,
     handleExportJSON,
@@ -204,13 +203,6 @@ const Flashcards = () => {
       setEdited(true);
     }
   }, [editMode]);
-
-  useEffect(() => {
-    console.log("refreshflashcards ran");
-    if (userData) {
-      refreshFlashcards();
-    }
-  }, []);
 
   const handleDefinitionChange = (index, newDef) => {
     // console.log("reciveded newDef", newDef, flashcards);
@@ -296,11 +288,7 @@ const Flashcards = () => {
         // backgroundColor: "pink",
       }}
     >
-      <Stack
-        sx={{ mb: 2, backgroundColor: "blue" }}
-        direction="row"
-        justifyContent="space-between"
-      >
+      <Stack sx={{ mb: 2 }} direction="row" justifyContent="space-between">
         <div style={{ display: "flex", alignItems: "center" }}>
           <IconButton to="/" component={Link} sx={{ color: "black", mr: 1 }}>
             <BackIcon />

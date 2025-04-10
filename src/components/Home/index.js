@@ -31,6 +31,10 @@ import {
 import TypingAnimation from "./typingAnimation";
 import StyleIcon from "@mui/icons-material/Style";
 
+import GoogleIcon from "@mui/icons-material/Google";
+import { Button } from "@mui/material";
+import { useAppContext } from "../../utils/AppContext"; // adjust path as needed
+
 const ButtonsBox = () => {
   return (
     <Box>
@@ -134,6 +138,8 @@ const Home = () => {
   const history = useHistory();
   const inputRef = useRef(null);
   const placeholder = TypingAnimation();
+
+  const { userData, setUserData, handleLogin, handleLogout } = useAppContext();
 
   // install as pwa prompt
   const [deferredPrompt, setDeferredPrompt] = useState(null);
@@ -248,6 +254,63 @@ const Home = () => {
 
   return (
     <Box sx={{ ...theme.mixins.alignInTheCenter }}>
+      <Box
+        sx={{
+          position: "absolute",
+          top: 20,
+          right: 20,
+          display: { xs: "none", md: "block" },
+        }}
+      >
+        {userData ? (
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            {userData.picture && (
+              <img
+                src={userData.picture}
+                alt="Profile"
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: "50%",
+                  objectFit: "cover",
+                }}
+              />
+            )}
+            <Typography variant="body2" color="textPrimary">
+              {userData.name || userData.username}
+            </Typography>
+            <Button
+              variant="outlined"
+              onClick={handleLogout}
+              sx={{
+                ml: 1,
+                textTransform: "none",
+                borderColor: "#ccc",
+                color: "#333",
+              }}
+            >
+              Sign Out
+            </Button>
+          </Box>
+        ) : (
+          <Button
+            variant="contained"
+            onClick={handleLogin}
+            startIcon={<GoogleIcon />}
+            sx={{
+              backgroundColor: "#4285F4",
+              color: "white",
+              textTransform: "none",
+              "&:hover": {
+                backgroundColor: "#3367D6",
+              },
+            }}
+          >
+            Sign in with Google
+          </Button>
+        )}
+      </Box>
+
       <Box
         sx={{
           display: "flex",

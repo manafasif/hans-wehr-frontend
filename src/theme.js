@@ -8,7 +8,8 @@ export default createTheme({
     primary: {
       main: "#14194C",
     },
-    pink: "linear-gradient(138.72deg, #000874 0%, #1B19B4 95.83%)",
+    blue: "linear-gradient(138.72deg, #000874 0%, #1B19B4 95.83%)",
+    blueAlternative: "linear-gradient(120deg, #001184 0%, #1C1AC5 100%)",
   },
   typography: {
     fontFamily: "Mulish, sans-serif",

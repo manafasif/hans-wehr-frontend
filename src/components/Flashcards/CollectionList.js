@@ -186,35 +186,32 @@ const CollectionList = ({ selectedCollection, setSelectedCollection }) => {
 
   return (
     <Box maxWidth="600px">
-      <Tabs
-        value={selectedCollection}
-        onChange={(e, value) => {
-          setSelectedCollection(value);
-        }}
-        variant="scrollable"
-        scrollButtons="auto"
-        aria-label="scrollable auto tabs example"
-      >
-        {Object.keys(flashcards).map((collectionName) => {
-          return (
+      <Box sx={{ display: "flex", alignItems: "center", overflowX: "auto" }}>
+        {Object.keys(flashcards).map((collectionName) => (
+          <Box
+            key={collectionName}
+            sx={{ display: "flex", alignItems: "center", mr: 1 }}
+          >
             <Tab
-              label={
-                <div style={{ display: "flex", alignItems: "center" }}>
-                  <span>{collectionName}</span>
-                  <IconButton
-                    size="small"
-                    onClick={(e) => setAnchorEl(e.currentTarget)}
-                    aria-label="edit"
-                  >
-                    <MoreVertIcon />
-                  </IconButton>
-                </div>
-              }
+              label={collectionName}
               value={collectionName}
+              onClick={() => setSelectedCollection(collectionName)}
+              selected={selectedCollection === collectionName}
             />
-          );
-        })}
-      </Tabs>
+            <IconButton
+              size="small"
+              onClick={(e) => {
+                setAnchorEl(e.currentTarget);
+                setSelectedCollection(collectionName); // ensure correct collection is targeted
+              }}
+              aria-label="edit"
+            >
+              <MoreVertIcon />
+            </IconButton>
+          </Box>
+        ))}
+      </Box>
+
       <Popover
         open={open}
         anchorEl={anchorEl}
@@ -238,6 +235,7 @@ const CollectionList = ({ selectedCollection, setSelectedCollection }) => {
         </MenuList>
       </Popover>
     </Box>
+
     // <div
     //   style={{
     //     maxHeight: "200px",
