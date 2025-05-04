@@ -11,6 +11,7 @@ import { Analytics } from "@vercel/analytics/react";
 import { initDictionaryDB } from "./utils/dictionary-db";
 import { AppContextProvider } from "./utils/AppContext";
 import Flashcards from "./components/Flashcards";
+import PrivacyPolicy from "./components/PrivacyPolicy/PrivacyPolicy";
 
 const App = () => {
   useEffect(() => {
@@ -46,6 +47,9 @@ const App = () => {
                 </Route>
                 <Route path="/flashcards">
                   <Flashcards />
+                </Route>
+                <Route path="/privacy-policy">
+                  <PrivacyPolicy />
                 </Route>
               </Router>
             </Grid>

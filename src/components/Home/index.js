@@ -102,13 +102,26 @@ function GuestFooter() {
           sx={{ flexGrow: 1, justifyContent: "center", display: "flex", my: 1 }}
         ></Box>
         <Box
-          sx={{ flexGrow: 1, justifyContent: "center", display: "flex", mb: 2 }}
+          sx={{
+            flexGrow: 1,
+            justifyContent: "center",
+            display: "flex",
+            mb: 2,
+            gap: 1,
+          }}
         >
           <Typography variant="caption" color="initial">
             Questions, Comments, Feedback?{" "}
             <Tooltip title="Feedback Form">
               <a href="https://forms.gle/Fn42MnUpShvWze2L7">Click here.</a>
             </Tooltip>
+            {" | "}
+            <Link
+              to="/privacy-policy"
+              style={{ textDecoration: "none", color: "inherit" }}
+            >
+              Privacy Policy
+            </Link>
           </Typography>
         </Box>
       </Container>
@@ -259,7 +272,7 @@ const Home = () => {
           position: "absolute",
           top: 20,
           right: 20,
-          display: { xs: "none", md: "block" },
+          display: { xs: "flex", md: "flex" },
         }}
       >
         {userData ? (
@@ -485,7 +498,7 @@ const Home = () => {
         </IconButton>
       </Tooltip> */}
 
-      {/* <GuestFooter /> */}
+      <GuestFooter />
     </Box>
   );
 };
