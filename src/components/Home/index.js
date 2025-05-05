@@ -266,7 +266,11 @@ const Home = () => {
   };
 
   return (
-    <Box sx={{ ...theme.mixins.alignInTheCenter }}>
+    <Box
+      sx={{
+        ...theme.mixins.alignInTheCenter,
+      }}
+    >
       <Box
         sx={{
           position: "absolute",
