@@ -29,6 +29,60 @@ import {
   retrieveAllWordsWithRoot,
 } from "../../utils/dictionary-db";
 import TypingAnimation from "./typingAnimation";
+import StyleIcon from "@mui/icons-material/Style";
+
+import GoogleIcon from "@mui/icons-material/Google";
+import { Button } from "@mui/material";
+import { useAppContext } from "../../utils/AppContext"; // adjust path as needed
+
+const ButtonsBox = () => {
+  return (
+    <Box>
+      <Tooltip title="Bookmarks">
+        <IconButton
+          to="/bookmarks"
+          component={Link}
+          sx={{
+            borderRadius: 2,
+            p: 2,
+            marginRight: 2,
+            color: "#fff",
+            background: (theme) => theme.palette.blue,
+            boxShadow: "0px 10px 10px rgba(221, 114, 133, 0.2)",
+            marginBottom: 20,
+            transition: "transform 0.3s ease-in-out",
+            ":hover": {
+              transform: "scale(1.1)",
+            },
+          }}
+        >
+          <BookmarkIcon />
+        </IconButton>
+      </Tooltip>
+
+      <Tooltip title="Flashcards">
+        <IconButton
+          to="/flashcards"
+          component={Link}
+          sx={{
+            borderRadius: 2,
+            p: 2,
+            color: "#fff",
+            background: (theme) => theme.palette.blueAlternative,
+            boxShadow: "0px 10px 10px rgba(221, 114, 133, 0.2)",
+            marginBottom: 20,
+            transition: "transform 0.3s ease-in-out",
+            ":hover": {
+              transform: "scale(1.1)",
+            },
+          }}
+        >
+          <StyleIcon />
+        </IconButton>
+      </Tooltip>
+    </Box>
+  );
+};
 
 function GuestFooter() {
   return (
@@ -48,13 +102,26 @@ function GuestFooter() {
           sx={{ flexGrow: 1, justifyContent: "center", display: "flex", my: 1 }}
         ></Box>
         <Box
-          sx={{ flexGrow: 1, justifyContent: "center", display: "flex", mb: 2 }}
+          sx={{
+            flexGrow: 1,
+            justifyContent: "center",
+            display: "flex",
+            mb: 2,
+            gap: 1,
+          }}
         >
           <Typography variant="caption" color="initial">
             Questions, Comments, Feedback?{" "}
             <Tooltip title="Feedback Form">
               <a href="https://forms.gle/Fn42MnUpShvWze2L7">Click here.</a>
             </Tooltip>
+            {" | "}
+            <Link
+              to="/privacy-policy"
+              style={{ textDecoration: "none", color: "inherit" }}
+            >
+              Privacy Policy
+            </Link>
           </Typography>
         </Box>
       </Container>
@@ -84,6 +151,8 @@ const Home = () => {
   const history = useHistory();
   const inputRef = useRef(null);
   const placeholder = TypingAnimation();
+
+  const { userData, setUserData, handleLogin, handleLogout } = useAppContext();
 
   // install as pwa prompt
   const [deferredPrompt, setDeferredPrompt] = useState(null);
@@ -197,7 +266,68 @@ const Home = () => {
   };
 
   return (
-    <Box sx={{ ...theme.mixins.alignInTheCenter }}>
+    <Box
+      sx={{
+        ...theme.mixins.alignInTheCenter,
+      }}
+    >
+      <Box
+        sx={{
+          position: "absolute",
+          top: 20,
+          right: 20,
+          display: { xs: "flex", md: "flex" },
+        }}
+      >
+        {userData ? (
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            {userData.picture && (
+              <img
+                src={userData.picture}
+                alt="Profile"
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: "50%",
+                  objectFit: "cover",
+                }}
+              />
+            )}
+            <Typography variant="body2" color="textPrimary">
+              {userData.name || userData.username}
+            </Typography>
+            <Button
+              variant="outlined"
+              onClick={handleLogout}
+              sx={{
+                ml: 1,
+                textTransform: "none",
+                borderColor: "#ccc",
+                color: "#333",
+              }}
+            >
+              Sign Out
+            </Button>
+          </Box>
+        ) : (
+          <Button
+            variant="contained"
+            onClick={handleLogin}
+            startIcon={<GoogleIcon />}
+            sx={{
+              backgroundColor: "#4285F4",
+              color: "white",
+              textTransform: "none",
+              "&:hover": {
+                backgroundColor: "#3367D6",
+              },
+            }}
+          >
+            Sign in with Google
+          </Button>
+        )}
+      </Box>
+
       <Box
         sx={{
           display: "flex",
@@ -353,7 +483,9 @@ const Home = () => {
         )}
       </Box>
 
-      <Tooltip title="Bookmarks">
+      <ButtonsBox />
+
+      {/* <Tooltip title="Bookmarks">
         <IconButton
           to="/bookmarks"
           component={Link}
@@ -368,9 +500,9 @@ const Home = () => {
         >
           <BookmarkIcon />
         </IconButton>
-      </Tooltip>
+      </Tooltip> */}
 
-      {/* <GuestFooter /> */}
+      <GuestFooter />
     </Box>
   );
 };

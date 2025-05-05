@@ -36,6 +36,15 @@ import { CopyToClipboard } from "react-copy-to-clipboard";
 import { stripHTMLTags, getSarfAlternates } from "../../utils/utils";
 import { retrieveAllWordsWithRoot } from "../../utils/dictionary-db";
 import { v4 as uuidv4 } from "uuid";
+import { useAppContext } from "../../utils/AppContext";
+import { toastSuccess } from "../../utils/utils";
+import LibraryAddOutlinedIcon from "@mui/icons-material/LibraryAddOutlined";
+import RemoveCircleOutlineOutlinedIcon from "@mui/icons-material/RemoveCircleOutlineOutlined";
+import AddCircleOutlineOutlinedIcon from "@mui/icons-material/AddCircleOutlineOutlined";
+import StyleOutlinedIcon from "@mui/icons-material/StyleOutlined";
+import Popover from "@mui/material/Popover";
+import MenuList from "@mui/material/MenuList";
+import MenuItem from "@mui/material/MenuItem";
 
 import {
   Dialog,
@@ -57,10 +66,263 @@ if (LOCAL === "1") {
   API_URL = "http://localhost:8080";
 }
 const CURRENT_RESPONSE_VERS = "1.0";
-logger.warn(`API URL: ${API_URL}`);
 
-const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
+const CardButtons = ({
+  shortNotifText,
+  textToCopy,
+  word,
+  form,
+  definition,
+  wordID,
+  root,
+  displayShort,
+  setDisplayShort,
+}) => {
+  // pull the flashcard functions from the context
+  const { addFlashcard, getCollectionNames, addCollectionWithFlashcard } =
+    useAppContext();
+
+  // state used to manage if this card has been added to flashcards
+  const [addedToFlashcards, setAddedToFlashcards] = useState(false);
+
+  // states used to manage push animation of button
+  const [flashcardButtonPressed, setFlashcardButtonPressed] = useState(false);
+  const [copyButtonPressed, setCopyButtonPressed] = useState(false);
+
+  const handleCopy = () => {
+    setCopyButtonPressed(true);
+    toastSuccess(`Successfully Copied ${shortNotifText} to Clipboard`);
+    // setTimeout(() => {
+    //   setCopyButtonPressed(false);
+    // }, 1000);
+  };
+
+  const buttonStyles = {
+    transition: "opacity 0.5s ease",
+    opacity: copyButtonPressed ? 0.1 : 1,
+  };
+
+  const handleAddToFlashcards = (collection) => {
+    // if (addedToFlashcards) {
+    //   setAddedToFlashcards(false);
+    //   removeFlashcard(word, form);
+    //   toastSuccess(`Successfully Removed ${shortNotifText} From Flashcards`);
+    // } else {
+    //   setAddedToFlashcards(true);
+
+    let addedTo;
+    if (collection) {
+      addedTo = addFlashcard(word, form, definition, root, wordID, collection);
+    } else {
+      addedTo = addFlashcard(word, form, definition, root, wordID);
+    }
+    toastSuccess(`Successfully Added ${shortNotifText} to ${addedTo}`);
+
+    // console.log("Added to flashcards", addedToFlashcards);
+    // button animation
+    setFlashcardButtonPressed(true);
+    setTimeout(() => {
+      setFlashcardButtonPressed(false);
+    }, 1000);
+  };
+
+  const flashCardButtonStyles = {
+    transition: "opacity 0.5s ease",
+    opacity: flashcardButtonPressed ? 0.1 : 1,
+  };
+
+  const [anchorEl, setAnchorEl] = useState(null);
+
+  const handleCollectionClick = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleCollectionClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleMenuItemClick = (collectionName) => {
+    // setSelectedCollection(collectionName);
+    handleAddToFlashcards(collectionName);
+    handleCollectionClose();
+  };
+
+  const handleAddNewCollection = () => {
+    handleCollectionClose();
+    Swal.fire({
+      title: "Add New Collection",
+      input: "text",
+      inputPlaceholder: "Enter collection name",
+      showCancelButton: true,
+      confirmButtonText: "Add",
+      cancelButtonText: "Cancel",
+      inputValidator: (value) => {
+        if (!value) {
+          return "Collection name cannot be empty";
+        }
+      },
+    }).then((result) => {
+      if (result.isConfirmed) {
+        const newCollectionName = result.value;
+        // You can perform the action to add the new collection here.
+        // console.log("Adding new collection:", newCollectionName);
+        addCollectionWithFlashcard(
+          word,
+          form,
+          definition,
+          root,
+          wordID,
+          newCollectionName
+        );
+        toastSuccess(
+          `Successfully added ${shortNotifText} to new collection: ${newCollectionName}`
+        );
+        handleAddToFlashcards(newCollectionName);
+      }
+    });
+  };
+
+  return (
+    <Box
+      sx={{
+        position: "absolute",
+        bottom: 0,
+        right: 0,
+        p: 0,
+        zIndex: 1,
+      }}
+    >
+      {/* button to add to flashcards collection */}
+
+      <Tooltip title={displayShort ? "Show Long Def" : "Show Short Def"}>
+        <IconButton
+          size="small"
+          onClick={(event) => {
+            setDisplayShort(!displayShort);
+          }}
+          style={flashCardButtonStyles}
+          // disabled={flashcardButtonPressed}
+          sx={{
+            p: 1,
+            color: displayShort ? "green" : "gray",
+            "& svg": {
+              fontSize: 14,
+            },
+          }}
+        >
+          {displayShort ? (
+            <AddCircleOutlineOutlinedIcon />
+          ) : (
+            <RemoveCircleOutlineOutlinedIcon />
+          )}
+        </IconButton>
+      </Tooltip>
+
+      <Tooltip title="Quick Add">
+        <IconButton
+          size="small"
+          onClick={() => {
+            if (getCollectionNames().length) {
+              handleAddToFlashcards();
+            } else {
+              handleAddNewCollection();
+            }
+          }}
+          style={flashCardButtonStyles}
+          disabled={flashcardButtonPressed}
+          sx={{
+            p: 1,
+            color: addedToFlashcards ? "green" : "gray",
+            "& svg": {
+              fontSize: 14,
+            },
+          }}
+        >
+          <LibraryAddOutlinedIcon />
+        </IconButton>
+      </Tooltip>
+
+      <Tooltip title="Add to Collection">
+        <IconButton
+          size="small"
+          onClick={(event) => {
+            setAnchorEl(event.currentTarget);
+          }}
+          style={flashCardButtonStyles}
+          disabled={flashcardButtonPressed}
+          sx={{
+            p: 1,
+            color: addedToFlashcards ? "green" : "gray",
+            "& svg": {
+              fontSize: 14,
+            },
+          }}
+        >
+          <StyleOutlinedIcon />
+        </IconButton>
+      </Tooltip>
+
+      <Popover
+        open={Boolean(anchorEl)}
+        anchorEl={anchorEl}
+        onClose={handleCollectionClose}
+        anchorOrigin={{
+          vertical: "bottom",
+          horizontal: "center",
+        }}
+        transformOrigin={{
+          vertical: "top",
+          horizontal: "center",
+        }}
+      >
+        <MenuList>
+          {getCollectionNames().map((collectionName) => {
+            return (
+              <MenuItem onClick={() => handleMenuItemClick(collectionName)}>
+                {collectionName}
+              </MenuItem>
+            );
+          })}
+          <MenuItem onClick={handleAddNewCollection}>
+            Add New Collection
+          </MenuItem>
+        </MenuList>
+      </Popover>
+
+      <CopyToClipboard text={`${textToCopy}`} onCopy={handleCopy}>
+        <Tooltip title="Copy to Clipboard">
+          <IconButton
+            size="small"
+            style={buttonStyles}
+            disabled={copyButtonPressed}
+            sx={{
+              zIndex: 1,
+              color: "gray",
+              "& svg": {
+                fontSize: 14,
+              },
+            }}
+          >
+            <CopyIcon />
+          </IconButton>
+        </Tooltip>
+      </CopyToClipboard>
+    </Box>
+  );
+};
+
+const Definition = () => {
   const [searchInput, setSearchInput] = useState("");
+
+  const {
+    bookmarks,
+    addBookmark,
+    removeBookmark,
+    addFlashcard,
+    removeFlashcard,
+    addCollection,
+    flashcards,
+  } = useAppContext();
 
   // handle submission of the search bar
   const handleInputSubmit = (event) => {
@@ -448,23 +710,10 @@ const Definition = ({ bookmarks, addBookmark, removeBookmark }) => {
 };
 
 // renders a single form for the root definition
-const DefinitionCard = ({ formEntry, i, countString }) => {
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = () => {
-    setCopied(true);
-    setTimeout(() => {
-      setCopied(false);
-    }, 1000);
-  };
-
-  const buttonStyles = {
-    transition: "opacity 0.5s ease",
-    opacity: copied ? 0 : 1,
-  };
+const DefinitionCard = ({ formEntry, i, countString, root }) => {
+  const [displayShort, setDisplayShort] = useState(false);
 
   return (
-    // <Tooltip title={`Verb Form ${form}`}>
     <Box
       key={`FormBox-${i}-${countString}`}
       sx={{
@@ -476,33 +725,25 @@ const DefinitionCard = ({ formEntry, i, countString }) => {
         position: "relative",
       }}
     >
-      <CopyToClipboard
-        text={`${formEntry.form} - ${formEntry.text}\n${stripHTMLTags(
+      {/* render the box for holding buttons in bottom 
+      right of form/noun card */}
+      <CardButtons
+        shortNotifText={`${formEntry.form} - ${formEntry.text}`}
+        textToCopy={`${formEntry.form} - ${formEntry.text}\n${stripHTMLTags(
           formEntry.translation.text
         )}`}
-        onCopy={handleCopy}
-        key={`CopyButton-${i}-${countString}`}
-      >
-        <IconButton
-          size="small"
-          onClick={handleCopy}
-          style={buttonStyles}
-          disabled={copied}
-          sx={{
-            position: "absolute",
-            bottom: 0,
-            right: 0,
-            p: 1,
-            zIndex: 1,
-            color: "gray",
-            "& svg": {
-              fontSize: 14,
-            },
-          }}
-        >
-          <CopyIcon />
-        </IconButton>
-      </CopyToClipboard>
+        word={formEntry.text}
+        form={formEntry.form}
+        definition={
+          displayShort
+            ? formEntry.translation.short
+            : formEntry.translation.text
+        }
+        wordID={formEntry.id}
+        root={root}
+        displayShort={displayShort}
+        setDisplayShort={setDisplayShort}
+      ></CardButtons>
 
       <Typography
         sx={{ textTransform: "capitalize" }}
@@ -525,30 +766,28 @@ const DefinitionCard = ({ formEntry, i, countString }) => {
         variant="body2"
         color="GrayText"
         key={`FormEntry-${i}`}
-        dangerouslySetInnerHTML={{ __html: formEntry.translation.text }}
+        dangerouslySetInnerHTML={{
+          __html: displayShort
+            ? formEntry.translation.short
+            : formEntry.translation.text,
+        }}
       >
         {/* { {meaning.definitions.length > 1 && `${idx + 1}. `}{" "}} */}
       </Typography>
     </Box>
-    // </Tooltip>
   );
 };
 
 // renders a single card for a noun
-const NounCard = ({ nounEntry, i, countString }) => {
-  const [copied, setCopied] = useState(false);
+const NounCard = ({ nounEntry, i, countString, root }) => {
+  const [displayShort, setDisplayShort] = useState(false);
 
-  const handleCopy = () => {
-    setCopied(true);
-    setTimeout(() => {
-      setCopied(false);
-    }, 1000);
-  };
-
-  const buttonStyles = {
-    transition: "opacity 0.5s ease",
-    opacity: copied ? 0 : 1,
-  };
+  let transliterations = nounEntry.transliteration
+    ? `${nounEntry.transliteration}`
+    : null;
+  if (transliterations && nounEntry.plural.transliteration) {
+    transliterations = `${transliterations} pl. ${nounEntry.plural.transliteration}`;
+  }
 
   return (
     <Box
@@ -562,35 +801,29 @@ const NounCard = ({ nounEntry, i, countString }) => {
         position: "relative",
       }}
     >
-      <CopyToClipboard
-        text={`${nounEntry["text"]} ${
+      <CardButtons
+        shortNotifText={`${nounEntry["text"]} ${
+          nounEntry["plural"]["text"]
+            ? `pl. ${nounEntry["plural"]["text"]}`
+            : ""
+        }`}
+        textToCopy={`${nounEntry["text"]} ${
           nounEntry["plural"]["text"]
             ? `pl. ${nounEntry["plural"]["text"]}`
             : ""
         } \n${stripHTMLTags(nounEntry["translation"]["text"])}`}
-        onCopy={handleCopy}
-        key={`NounCopyButton-${i}-${countString}`}
-      >
-        <IconButton
-          size="small"
-          onClick={handleCopy}
-          style={buttonStyles}
-          disabled={copied}
-          sx={{
-            position: "absolute",
-            bottom: 0,
-            right: 0,
-            p: 1,
-            zIndex: 1,
-            color: "gray",
-            "& svg": {
-              fontSize: 14,
-            },
-          }}
-        >
-          <CopyIcon />
-        </IconButton>
-      </CopyToClipboard>
+        word={nounEntry.text}
+        definition={
+          displayShort
+            ? nounEntry.translation.short
+            : nounEntry.translation.text
+        }
+        wordID={nounEntry.id}
+        root={root}
+        displayShort={displayShort}
+        setDisplayShort={setDisplayShort}
+      />
+
       <Typography color="GrayText" variant="subtitle1">
         {`${nounEntry["text"]} ${
           nounEntry["plural"]["text"]
@@ -605,7 +838,8 @@ const NounCard = ({ nounEntry, i, countString }) => {
         fontWeight={550}
         key={`NounsEntry-${i}-${countString}`}
       >
-        {nounEntry.transliteration ? `${nounEntry.transliteration}` : null}
+        {transliterations}
+        {/* {nounEntry.transliteration ? `${nounEntry.transliteration}` : null} */}
       </Typography>
       <Typography
         sx={{ my: 1 }}
@@ -613,7 +847,9 @@ const NounCard = ({ nounEntry, i, countString }) => {
         color="GrayText"
         key={`NounsDef-${i}-${countString}`}
         dangerouslySetInnerHTML={{
-          __html: nounEntry["translation"]["text"],
+          __html: displayShort
+            ? nounEntry["translation"]["short"]
+            : nounEntry["translation"]["text"],
         }}
       ></Typography>
     </Box>
@@ -647,7 +883,7 @@ const SingleDefinition = ({ word, definition, countString }) => {
             py: 5,
             color: "white",
             borderRadius: 2,
-            position: "relative",
+            position: "relative", // add this to make position absolute work
           }}
         >
           <Box
@@ -671,6 +907,7 @@ const SingleDefinition = ({ word, definition, countString }) => {
             {word}
           </Typography>
 
+          {/* Report Error Icon */}
           <Tooltip title="Report Error">
             <IconButton
               size="small"
@@ -689,35 +926,31 @@ const SingleDefinition = ({ word, definition, countString }) => {
             </IconButton>
           </Tooltip>
 
-          <Dialog open={reportErrorOpen} onClose={handleCloseReportError}>
-            <DialogTitle>Report Error</DialogTitle>
-            <DialogContent>
-              <Typography>Report error not supported yet! </Typography>
-            </DialogContent>
-            <DialogActions>
-              <Button onClick={handleCloseReportError}>Cancel</Button>
-              <Button onClick={handleCloseReportError} color="primary">
-                Submit
-              </Button>
-            </DialogActions>
-          </Dialog>
+          {/* Report Error Form Dialog */}
+          {/* TODO */}
+          {/* <ReportErrorDialog
+            open={reportErrorOpen}
+            handleClose={handleCloseReportError}
+            word={word}
+          /> */}
         </Stack>
       </Tooltip>
 
-      <Fragment key={`DefinitionsBlock-${countString}`}>
-        <Divider variant="inset" light={true} sx={{ display: "none", my: 3 }} />
+      <Fragment key={1}>
+        <Divider varianr="inset" light={true} sx={{ display: "none", my: 3 }} />
 
-        {definition["definitions"].map((formEntry) => (
+        {definition["definitions"].map((formEntry, index) => (
           <DefinitionCard
-            key={`DefCard-${uuidv4()}`}
             formEntry={formEntry}
-            i={uuidv4()}
+            i={index}
+            key={`DefinitionCard-${countString}-${index}`}
             countString={countString}
+            root={word}
           />
         ))}
       </Fragment>
 
-      {definition["nouns"] && definition["nouns"].length > 0 && (
+      {definition["nouns"].length ? (
         <Fragment key={`NounsBlock-${countString}`}>
           <Divider sx={{ display: "block", my: 3 }} />
 
@@ -736,21 +969,27 @@ const SingleDefinition = ({ word, definition, countString }) => {
               borderRadius: 2,
             }}
           >
-            <Typography sx={{ textTransform: "capitalize" }} variant="h6">
+            <Typography
+              sx={{ textTransform: "capitalize" }}
+              variant="h6"
+              key={`NounsCard-${countString}`}
+            >
               Nouns
             </Typography>
           </Stack>
 
-          {definition["nouns"].map((nounEntry) => (
-            <NounCard
-              key={`NounCard-${uuidv4()}`}
-              nounEntry={nounEntry}
-              i={uuidv4()}
-              countString={countString}
-            />
-          ))}
+          {definition["nouns"] &&
+            definition["nouns"].map((nounEntry, i) => (
+              <NounCard
+                nounEntry={nounEntry}
+                i={i}
+                key={`NounCard-${countString}-${i}`}
+                countString={countString}
+                root={word}
+              />
+            ))}
         </Fragment>
-      )}
+      ) : null}
     </>
   );
 };
