@@ -61,12 +61,6 @@ const PrivacyPolicy = () => {
             - No data is stored on external servers
           </Typography>
         </Box>
-
-        <Box my={3}>
-          <Typography variant="h6" gutterBottom>
-            Contact
-          </Typography>
-        </Box>
       </Paper>
     </Container>
   );
