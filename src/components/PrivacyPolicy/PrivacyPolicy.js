@@ -66,10 +66,6 @@ const PrivacyPolicy = () => {
           <Typography variant="h6" gutterBottom>
             Contact
           </Typography>
-          <Typography variant="body1">
-            If you have any questions, please contact the developer at{" "}
-            <Link href="mailto:manaf@utexas.edu">manaf@utexas.edu</Link>.
-          </Typography>
         </Box>
       </Paper>
     </Container>
