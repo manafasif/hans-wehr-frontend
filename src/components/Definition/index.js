@@ -928,11 +928,11 @@ const SingleDefinition = ({ word, definition, countString }) => {
 
           {/* Report Error Form Dialog */}
           {/* TODO */}
-          {/* <ReportErrorDialog
+          <ReportErrorDialog
             open={reportErrorOpen}
             handleClose={handleCloseReportError}
             word={word}
-          /> */}
+          />
         </Stack>
       </Tooltip>
 

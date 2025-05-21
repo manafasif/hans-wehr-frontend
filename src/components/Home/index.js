@@ -34,10 +34,10 @@ import StyleIcon from "@mui/icons-material/Style";
 import GoogleIcon from "@mui/icons-material/Google";
 import { Button } from "@mui/material";
 import { useAppContext } from "../../utils/AppContext"; // adjust path as needed
+
 import { Capacitor } from "@capacitor/core";
-const platform = Capacitor.getPlatform();
-const isNative = platform !== "web";
-console.log("isNative", isNative);
+
+const isNative = Capacitor.isNativePlatform();
 
 const ButtonsBox = () => {
   return (

@@ -16,7 +16,9 @@ export async function initDictionaryDB(jsonURL = "/data/hans_wehr_data.json") {
     return initPromise; // Return ongoing or completed init
   }
 
-  console.log("📦 Initializing IndexedDB...");
+  console.log("This is a test log message");
+
+  console.log("📦 Initializing IndexedDB..");
   initPromise = (async () => {
     dbPromise = openDB(DB_NAME, DB_VERSION, {
       upgrade(db) {

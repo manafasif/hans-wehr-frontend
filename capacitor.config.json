@@ -1,5 +1,10 @@
 {
   "appId": "app.hanswehr",
   "appName": "Hans Wehr",
-  "webDir": "build"
+  "webDir": "build",
+  "bundledWebRuntime": false,
+  "server": {
+    "url": "http://192.168.56.1:3000",
+    "cleartext": true
+  }
 }

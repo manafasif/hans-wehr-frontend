@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import Papa from "papaparse";
 import Swal from "sweetalert2";
 import axios from "axios";
+import { Capacitor } from "@capacitor/core";
 
 import {
   uploadFlashcardsToDrive,
@@ -98,6 +99,7 @@ export const AppContextProvider = ({ children }) => {
 
   const CURRENT_FLASHCARDS_VERSION = "1.1";
   const flashcards_version = localStorage.getItem("flashcards_version");
+
   if (
     !flashcards_version ||
     flashcards_version !== CURRENT_FLASHCARDS_VERSION
@@ -108,6 +110,10 @@ export const AppContextProvider = ({ children }) => {
     localStorage.setItem("flashcards", JSON.stringify({}));
     // TODO: implement logic to update flashcard version
   }
+
+  const platform = Capacitor.getPlatform();
+  const isNative = platform !== "web";
+  console.log("isNative", isNative);
 
   const [lastUsedCollection, setLastUsedCollection] = useState(null);
 
